@@ -1,0 +1,51 @@
+---
+title: "Data 583 Life Expectancy (WHO)"
+output: pdf_document
+date: "2023-03-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## EDA
+
+
+
+```{r}
+le <- read.csv("dataset/LifeExpectancy.csv")
+summary(le)
+```
+
+```{r}
+head(le)
+
+# le
+# Part 1 : Data Wrangling
+
+### Create a new column Status.val to represent the Status column with number
+le$Status.val <- ifelse(le$Status == "Developed",1,0)
+
+
+#### SCALING : To be determined
+le$GDP_scaled = scale(le$GDP)  # Population has a substantially large figure
+# le$Population_scaled = scale(le$Population) # Population has a substantially large figure, but not used as predictive variable in our project
+
+
+
+
+
+```
+
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
