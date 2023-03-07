@@ -1,7 +1,10 @@
 ---
 title: "Data 583 Life Expectancy (WHO)"
+author: "Justin Chan, Kenny Tong, Viji Rajagopalan"
+date: "7 Mar, 2023"
 output: pdf_document
-date: "2023-03-02"
+fontsize: 10pt
+geometry: margin=2cm
 ---
 
 ```{r setup, include=FALSE}
@@ -11,41 +14,143 @@ knitr::opts_chunk$set(echo = TRUE)
 ## EDA
 
 
-
+### Original Dataset Summary & Initial Data Screening
+Purpose : Let's take a snapshot of the original dataset and have a rough idea of its record
 ```{r}
 le <- read.csv("dataset/LifeExpectancy.csv")
 summary(le)
 ```
-
+Let's look at the dataset dimension first
 ```{r}
-head(le)
+dim(le)
+```
 
-# le
-# Part 1 : Data Wrangling
+Then, have a quick overall screening of the dataset
+```{r}
+head(le,5)
 
-### Create a new column Status.val to represent the Status column with number
+```
+
+Here is another view :
+```{r}
+str(le)
+```
+
+From the above broad view, the following Conclusion/Key Findings are reached : 
+
+- The records range is from Year 2000 to 2015
+- Columns with NA : Life Expectancy, Adult Mortality, Alcohol, Hep B, BMI, Polio, Total exp, Dip, GDP, Population, thinness..1.19, thinness.5.9, Income.composition.of.resources, Schooling
+- 'Status' Column is of the "character" data type, with values "Developing" and "Developed".  We will introduce a new column 'Status.val' to be the factor value of 'Status' for better analysis..
+- 'Percentage Expenditure' has a mean value of `r mean(le$percentage.expenditure)` and max. value of `r max(le$percentage.expenditure)`.  Spending on health is more than the GDP per capita? Look into the column definition : Expenditure on health as a percentage of Gross Domestic Product per capita(%). The data of such magnitude simply does not quite make sense. Cross check with other references (e.g. the World Bank https://data.worldbank.org/indicator/SH.XPD.CHEX.GD.ZS).  OK, let's conclude that we have hesitation about the reliability/interpretation of the value of this column, and probably would drop and skip this column for the rest of this analysis.
+- 'Population' and 'GDP' have a relatively large scale, compared with all other columns.  So, we may need to scale these two columns.
+
+Now, let's do some data wrangling based on the above conclusions :
+```{r}
+# Create a new column Status.val to represent the Status column with number
 le$Status.val <- ifelse(le$Status == "Developed",1,0)
 
+# Create a new column as the scaled version of the GDP & Population, 
+le$GDP_scaled = scale(le$GDP)
+le$Population_scaled = scale(le$Population)
 
-#### SCALING : To be determined
-le$GDP_scaled = scale(le$GDP)  # Population has a substantially large figure
-# le$Population_scaled = scale(le$Population) # Population has a substantially large figure, but not used as predictive variable in our project
+# Remove the unreliable column 
+le <- subset(le,select=-c(percentage.expenditure))
+
+```
+
+### Null Value Analysis and Handling
+Purpose : Investigate the and determine how to handle the null value in the data set
+
+There are `r dim(le)[1]` no. of rows in the dataset.  Let's set the threshold of 20% as the max. proportion of null column to be allowed in a data column.  That means, columns with na over 20% will be dropped.  The threshold is then  `r dim(le)[1] * 0.2`.  So, the following 'Population' column will be dropped.
 
 
 
-
+```{r}
+#head(le)
+le <- subset(le,select=-c(Population))
+# also Population_Scaled
+le <- subset(le,select=-c(Population_scaled))
 
 ```
 
 
+For the other values, we will set the na to the respective column mean for the subsequent analysis.
 
+```{r message=FALSE, warning=FALSE}
 
-## Including Plots
+for(i in 1:ncol(le)) {                                   # Replace NA in all columns
+  le[ , i][is.na(le[ , i])] <- mean(le[ , i], na.rm = TRUE)
+}
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Now, all na have been handled!  Let's continue our analysis.
+
+
+### Overall General Life Expectancy Trend
+
+Purpose : Do some visualisation to explore and identify the general data pattern, trends and clusters, etc
+
+```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(tidyverse)
+
+le %>%
+  group_by(Year) %>%
+  summarise(Life.expectancy = mean(Life.expectancy)) %>%
+  ggplot(aes(x=Year,
+               y=Life.expectancy)) +    
+  geom_line()
+
+```
+
+Findings :
+
+- The general life expectancy has been steadily increasing duration the year
+- Average Life expectancy increase from about 67 to 71.5 in 15 years.
+
+
+
+```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+le %>%
+  group_by(Status) %>%
+  summarise(Life.expectancy = mean(Life.expectancy)) %>%
+  ggplot(aes(x=Status,
+               y=Life.expectancy)) +    
+  geom_bar(stat = "identity")
+
+```
+Finding :
+
+- Life expectancy of Developed countries are significantly higher than that of Developing countries.
+
+```{r fig.height=3, message=FALSE, warning=FALSE}
+le.pivot <- pivot_longer(le,c(Adult.Mortality,under.five.deaths,infant.deaths),names_to='Mortality.Group',values_to='Mortality.Rate')
+require(gridExtra)
+
+le.pivot.area <- le.pivot %>%
+  group_by(Year,Mortality.Group) %>%
+  summarise(Mortality.Rate = mean(Mortality.Rate)) %>%
+  ggplot(aes(x=Year,
+             y=Mortality.Rate,
+             fill=Mortality.Group)) +
+  geom_area(position="stack",stat="identity")
+
+le.pivot.line <- le.pivot %>%
+  group_by(Year,Mortality.Group) %>%
+  summarise(Mortality.Rate = mean(Mortality.Rate)) %>%
+  ggplot(aes(x=Year,
+             y=Mortality.Rate,
+             color=Mortality.Group)) +
+  geom_line()
+
+grid.arrange(le.pivot.area, le.pivot.line, ncol=2)
+```
+
+Findings :
+
+- The mortality rate of all three age groups are generally decreasing as a whole
+- The mortality rate of the adult group, however, have fluctuation within the period
+
+
+
