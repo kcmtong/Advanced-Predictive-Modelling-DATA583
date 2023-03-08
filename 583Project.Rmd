@@ -131,6 +131,48 @@ gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot, ncol = 1)
 
 There are `r dim(le)[1]` no. of rows in the dataset. Acording to our Visualization, there seems to be a correlation in the appearance in missing data in feature "population", "gdp" , "income.composition.of.resources" and "schooling" indicated by the bottom plot.
 
+```{r}
+
+#le <- le[complete.cases(le$Population_scaled),] 
+#le$Population,le$GDP,le$GDP_scaled,le$Income.composition.of.resources,le$Schooling),]
+
+#le <- le[!is.na(le$Alcohol),]
+
+library(dplyr)
+le <- le %>% filter_at(vars(Population_scaled,Population,GDP,GDP_scaled,Income.composition.of.resources,Schooling),any_vars(!is.na(.)))
+
+head(le)
+
+missing.values <- le %>%
+  gather(key="key", value="val") %>%
+  mutate(isna=is.na(val)) %>%
+  group_by(key) %>%
+  mutate(total=n()) %>%
+  group_by(key,total,isna) %>%
+  summarise(num.isna=n()) %>%
+  mutate(pct=num.isna/total * 100)
+
+missing.values
+
+levels <- (missing.values%>%filter(isna==T) %>% arrange(desc(pct)))$key
+
+null_inrow.plot <- le %>%
+  mutate(id = row_number()) %>%
+  gather(-id, key = "key", value = "val") %>%
+  mutate(isna = is.na(val)) %>%
+  ggplot(aes(key, id, fill = isna)) +
+    geom_raster(alpha=0.8) +
+    scale_fill_manual(name = "",
+        values = c('dodgerblue2', 'coral'),
+        labels = c("Present", "Missing")) +
+    scale_x_discrete(limits = levels) +
+    labs(x = "Features", y = "Row Number", title = "Missing values in rows") +
+    coord_flip()
+
+null_inrow.plot
+```
+
+
 Let's set the threshold of 20% as the max. proportion of null column to be allowed in a data column.  That means, columns with na over 20% will be dropped.  The threshold is then  `r dim(le)[1] * 0.2`.  So, the following 'Population' column will be dropped.
 
 ```{r}
@@ -233,8 +275,8 @@ head(le)
 ```
 ```{r}
 #convert Status and Country from type char to factor type, so that they can be used in statistical modeling where they will be implemented correctly
-le$Status <- factor(le$Status)
-le$Country <- factor(le$Country)
+#le$Status <- factor(le$Status)
+#le$Country <- factor(le$Country)
 ```
 
 ```{r}
@@ -252,8 +294,13 @@ head(le)
 
 
 ```{r}
-str(le)
-glm_model <- glm(le$Life.expectancy~., data = le, family = "poisson")
+#str(le)
+class(le$Country)
+glm_model <- glm(Life.expectancy~., data = le, family = "gaussian")
+bic_back <- step(glm_model, k=log(nrow(le)), direction="backward", trace=FALSE)
+summary(bic_back)
+summary(glm_model)
+```
 bic_back <- step(glm_model, k=log(nrow(le)), direction="backward", trace=FALSE)
 summary(bic_back)
 
