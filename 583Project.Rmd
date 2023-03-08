@@ -60,6 +60,12 @@ le <- subset(le,select=-c(percentage.expenditure))
 ```
 
 ### Null Value Analysis and Handling
+```{r}
+library(magrittr) 
+library(dplyr)  
+library(tidyr)
+le %>% group_by(Country) %>% summarise(COUNT = n())
+```
 Purpose : Investigate the and determine how to handle the null value in the data set
 
 Missing values could have a large affect to the overall quality of the static models and machine learning models and need to be clean before using it in our training model. 
@@ -82,8 +88,7 @@ missing.values <- le %>%
 
 missing.values
 ```
-
-Next Step, we could visualize the missing data to identify patterns or cluster of missing values within our data to determine the cause of the missing data and whether it is random or systematic and to highlight potential biases that may exist in our data set. Visualizing the missing value also allow to understand the extend of the missing data and determine appropriate strategies for imputing missing value, since different imputation methods could be more appropriate depending on the pattern of the missing data.
+There are total of 2563 missing value within our dataset, we could visualize the missing data to identify patterns or cluster of missing values within our data to determine the cause of the missing data and whether it is random or systematic and to highlight potential biases that may exist in our data set. Visualizing the missing value also allow to understand the extend of the missing data and determine appropriate strategies for imputing missing value, since different imputation methods could be more appropriate depending on the pattern of the missing data.
 
 ```{r}
 library(ggplot2)
@@ -123,27 +128,10 @@ null_inrow.plot <- le %>%
     labs(x = "Features", y = "Row Number", title = "Missing values in rows") +
     coord_flip()
 
-options(repr.plot.width = 30, repr.plot.height = 20)
-gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot, ncol = 1) 
-
-
-```
-
-There are `r dim(le)[1]` no. of rows in the dataset. Acording to our Visualization, there seems to be a correlation in the appearance in missing data in feature "population", "gdp" , "income.composition.of.resources" and "schooling" indicated by the bottom plot.
-
-```{r}
-
-#le <- le[complete.cases(le$Population_scaled),] 
-#le$Population,le$GDP,le$GDP_scaled,le$Income.composition.of.resources,le$Schooling),]
-
-#le <- le[!is.na(le$Alcohol),]
-
 library(dplyr)
-le <- le %>% filter_at(vars(Population_scaled,Population,GDP,GDP_scaled,Income.composition.of.resources,Schooling),any_vars(!is.na(.)))
+le_dropped <- le %>% filter_at(vars(Population_scaled,Population,GDP,GDP_scaled,Income.composition.of.resources,Schooling),any_vars(!is.na(.)))
 
-head(le)
-
-missing.values <- le %>%
+missing.values <- le_dropped %>%
   gather(key="key", value="val") %>%
   mutate(isna=is.na(val)) %>%
   group_by(key) %>%
@@ -156,7 +144,17 @@ missing.values
 
 levels <- (missing.values%>%filter(isna==T) %>% arrange(desc(pct)))$key
 
-null_inrow.plot <- le %>%
+null_percentage_dropped.plot <- missing.values %>% ggplot() +
+        geom_bar(aes(x = reorder(key, desc(pct)), 
+                     y = pct, fill=isna), stat='identity', alpha=0.8) +
+      scale_x_discrete(limits = levels) +
+      scale_fill_manual(name = "", 
+                        values = c('dodgerblue2', 'coral'), 
+                        labels = c("Present", "Missing")) +
+      coord_flip() + labs(title = "Percentage of missing values after dropping some common null value records", 
+                          x = 'Features', y = "% of missing values")
+
+null_inrow_dropped.plot <- le_dropped %>%
   mutate(id = row_number()) %>%
   gather(-id, key = "key", value = "val") %>%
   mutate(isna = is.na(val)) %>%
@@ -166,30 +164,44 @@ null_inrow.plot <- le %>%
         values = c('dodgerblue2', 'coral'),
         labels = c("Present", "Missing")) +
     scale_x_discrete(limits = levels) +
-    labs(x = "Features", y = "Row Number", title = "Missing values in rows") +
+    labs(x = "Features", y = "Row Number", title = "Missing values in rows after dropping some common null value records") +
     coord_flip()
 
-null_inrow.plot
+options(repr.plot.width = 30, repr.plot.height = 60)
+
+gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot,null_percentage_dropped.plot, null_inrow_dropped.plot, ncol = 2)
+
+
 ```
 
+There are `r dim(le)[1]` no. of rows in the dataset. Acording to our Visualization on left, there seems to be a correlation in the appearance in missing data in our orginal data's feature "population", "gdp" , "income.composition.of.resources" and "schooling". We could deal with this correlation in missing data by removing the the record that have missing value in all of the listed variables.
 
-Let's set the threshold of 20% as the max. proportion of null column to be allowed in a data column.  That means, columns with na over 20% will be dropped.  The threshold is then  `r dim(le)[1] * 0.2`.  So, the following 'Population' column will be dropped.
-
+#Check how much records do each country have:
 ```{r}
+le %>% group_by(Country) %>% summarise(COUNT = n())
+le_dropped %>% group_by(Country) %>% summarise(COUNT = n()) #12 country were removed after dropping some common null value (193-181)
+
+#might need to consider not using this variable 
+```
+
+########Since we have a better approach, we might need to remove this############
+Let's set the threshold of 20% as the max. proportion of null column to be allowed in a data column.  That means, columns with na over 20% will be dropped.  The threshold is then  `r dim(le)[1] * 0.2`.  So, the following 'Population' column will be dropped.
+____________________________________________________
+
 #head(le)
 le <- subset(le,select=-c(Population))
 # also Population_Scaled
 le <- subset(le,select=-c(Population_scaled))
 
-```
-
+____________________________________________________
+#################################################################################
 
 For the other values, we will set the na to the respective column mean for the subsequent analysis.
 
 ```{r message=FALSE, warning=FALSE}
 
-for(i in 1:ncol(le)) {                                   # Replace NA in all columns
-  le[ , i][is.na(le[ , i])] <- mean(le[ , i], na.rm = TRUE)
+for(i in 1:ncol(le_dropped)) {                                   # Replace NA in all columns
+  le_dropped[ , i][is.na(le_dropped[ , i])] <- mean(le_dropped[ , i], na.rm = TRUE)
 }
 
 ```
@@ -208,7 +220,7 @@ library(ggplot2)
 #install.packages("tidyverse")
 library(tidyverse)
 
-le %>%
+le_dropped %>%
   group_by(Year) %>%
   summarise(Life.expectancy = mean(Life.expectancy)) %>%
   ggplot(aes(x=Year,
@@ -225,7 +237,7 @@ Findings :
 
 
 ```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
-le %>%
+le_dropped %>%
   group_by(Status) %>%
   summarise(Life.expectancy = mean(Life.expectancy)) %>%
   ggplot(aes(x=Status,
@@ -239,10 +251,10 @@ Finding :
 - Life expectancy of Developed countries are significantly higher than that of Developing countries.
 
 ```{r fig.height=3, message=FALSE, warning=FALSE}
-le.pivot <- pivot_longer(le,c(Adult.Mortality,under.five.deaths,infant.deaths),names_to='Mortality.Group',values_to='Mortality.Rate')
+le_dropped.pivot <- pivot_longer(le_dropped,c(Adult.Mortality,under.five.deaths,infant.deaths),names_to='Mortality.Group',values_to='Mortality.Rate')
 require(gridExtra)
 
-le.pivot.area <- le.pivot %>%
+le_dropped.pivot.area <- le_dropped.pivot %>%
   group_by(Year,Mortality.Group) %>%
   summarise(Mortality.Rate = mean(Mortality.Rate)) %>%
   ggplot(aes(x=Year,
@@ -250,7 +262,7 @@ le.pivot.area <- le.pivot %>%
              fill=Mortality.Group)) +
   geom_area(position="stack",stat="identity")
 
-le.pivot.line <- le.pivot %>%
+le_dropped.pivot.line <- le_dropped.pivot %>%
   group_by(Year,Mortality.Group) %>%
   summarise(Mortality.Rate = mean(Mortality.Rate)) %>%
   ggplot(aes(x=Year,
@@ -258,7 +270,7 @@ le.pivot.line <- le.pivot %>%
              color=Mortality.Group)) +
   geom_line()
 
-grid.arrange(le.pivot.area, le.pivot.line, ncol=2)
+grid.arrange(le_dropped.pivot.area,le_dropped.pivot.line, ncol=2)
 ```
 
 Findings :
@@ -269,44 +281,61 @@ Findings :
 
 
 
-Variable Selections(Not yet finished):
+###############################################################################
+######################Variable Selections (BIC backwards):#####################
+###############################################################################
+
+
+
+
 ```{r}
-head(le)
+head(le_dropped)
 ```
 ```{r}
-#convert Status and Country from type char to factor type, so that they can be used in statistical modeling where they will be implemented correctly
-#le$Status <- factor(le$Status)
-#le$Country <- factor(le$Country)
+df = subset(le_dropped, select = -c(Country,GDP,Population) )
+head(df)
 ```
-
-```{r}
-
-#le[] <- lapply(le, function(x) if(is.numeric(x)){
-#                     scale(x, center=TRUE, scale=TRUE)
-#                      } else x)
-
-le[,2]<-scale(le[,2])
-le[,5:22]<-scale(le[,5:22])
-head(le)
-```
-
-
-
 
 ```{r}
 #str(le)
-class(le$Country)
-glm_model <- glm(Life.expectancy~., data = le, family = "gaussian")
-bic_back <- step(glm_model, k=log(nrow(le)), direction="backward", trace=FALSE)
+class(df$Country)
+glm_model <- glm(Life.expectancy~., data = df, family = "gaussian")
+bic_back <- step(glm_model, k=log(nrow(df)), direction="backward", trace=FALSE)
 summary(bic_back)
 summary(glm_model)
 ```
-bic_back <- step(glm_model, k=log(nrow(le)), direction="backward", trace=FALSE)
-summary(bic_back)
+
+###############################################################################
+###############PCA(suggest a simpler scoring system):##########################
+###############################################################################
+
+```{r}
+
+head(df[,-3])
+df$Status <- as.numeric(as.factor(df$Status)) #Convert Non-Numeric Columns to Numeric for PCA
+pca_model <- prcomp(df[,-3])
+summary(pca_model)
 
 ```
+```{r}
+#Use Sceen Plot to decide how many PC to keep, But there seems to be a large value in our PC1 Standard Deviation so it isn't a clear indicator.
 
+plot(pca_model, type="lines")
+```
+```{r}
+#Use Standard deviation instead to decide how many PC to keep, if it is below 1 we toss it out since it does not explain much info about our data.it is suggest us to keep 15 PC.
 
+pca_model$rotation[,1:15]
+```
+###############################################################################
+#########################################FA:(not working)###################################
+###############################################################################
 
+```{r}
+df2 = subset(le_dropped, select = -c(Country,GDP_scaled,Population_scaled) )
+head(df2)
 
+head(df)
+fa_model <- factanal(df2, factors = 13)
 
+```
