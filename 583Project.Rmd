@@ -169,7 +169,8 @@ null_inrow_dropped.plot <- le_dropped %>%
 
 options(repr.plot.width = 30, repr.plot.height = 60)
 
-gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot,null_percentage_dropped.plot, null_inrow_dropped.plot, ncol = 2)
+gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot, ncol = 1)
+gridExtra::grid.arrange(null_percentage_dropped.plot, null_inrow_dropped.plot, ncol = 1)
 
 
 ```
@@ -292,13 +293,17 @@ Findings :
 head(le_dropped)
 ```
 ```{r}
+#droped GDP,Population
 df = subset(le_dropped, select = -c(Country,GDP,Population) )
+#droped GDP_scaled,Population_scaled
+df_ns = subset(le_dropped, select =-c(Country,GDP_scaled,Population_scaled) )
 head(df)
 ```
 Let's look at the distribution of different columns in the dataset.
 ```{r}
-library(Hmisc)
-hist.data.frame(df)
+#install.packages("Hmisc")
+#library(Hmisc)
+#hist.data.frame(df)
 ```
 As we see, the response variable Life Expectancy is normally distributed and so our first try is to see if 
 MLR is able to predict well. Also, using this model and running a BIC on it, we can understand the columns that are
@@ -333,6 +338,8 @@ summary(clus)
 Variable selection using BIC and VIF, VIF also increases model performance:
 
 ```{r}
+install.packages("car")
+library(car)
 vif(model.step.bic)
 
 #removed one of infant.deaths or under.five.deaths
@@ -379,6 +386,39 @@ bic_back <- step(glm_model, k=log(nrow(df)), direction="backward", trace=FALSE)
 summary(bic_back)
 summary(glm_model)
 ```
+
+
+```{r}
+library("glmnet")
+#head(df_ns) #using non-scaled GDP and Population
+df_ns$Status <- as.numeric(as.factor(df_ns$Status)) #Convert Non-Numeric Columns to Numeric for glmnet
+y <- df_ns$Life.expectancy
+x <- as.matrix(df_ns[,c(-1,-3)])
+
+grid <- exp(seq(2, -9, length=100)) 
+
+ladf<- cv.glmnet(x, y, alpha=1, lambda=grid, standardize = TRUE)
+plot(ladf$glmnet.fit, label=TRUE, xvar="lambda")
+plot(ladf)
+
+coef(ladf) #thinness.5.9.years is removed since the coefficients went to 0
+````
+```{r}
+library("glmnet")
+df$Status <- as.numeric(as.factor(df$Status)) #Convert Non-Numeric Columns to Numeric for glmnet
+y <- df$Life.expectancy
+x <- as.matrix(df[,c(-1,-3)])
+grid <- exp(seq(2, -9, length=100)) 
+
+ladf<- cv.glmnet(x, y, alpha=1, lambda=grid, standardize = TRUE)
+
+plot(ladf$glmnet.fit, label=TRUE, xvar="lambda")
+plot(ladf)
+
+coef(ladf)
+````
+
+
 
 ###############################################################################
 ###############PCA(suggest a simpler scoring system):##########################
