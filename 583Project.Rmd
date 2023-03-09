@@ -295,6 +295,81 @@ head(le_dropped)
 df = subset(le_dropped, select = -c(Country,GDP,Population) )
 head(df)
 ```
+Let's look at the distribution of different columns in the dataset.
+```{r}
+library(Hmisc)
+hist.data.frame(df)
+```
+As we see, the response variable Life Expectancy is normally distributed and so our first try is to see if 
+MLR is able to predict well. Also, using this model and running a BIC on it, we can understand the columns that are
+important.
+```{r}
+lmmod <- lm(Life.expectancy~., data = df)
+summary(lmmod)
+```
+```{r}
+plot(lmmod)
+```
+
+
+```{r}
+model.step.bic <- step(lmmod,k=log(nrow(df)))
+summary(model.step.bic)
+```
+
+
+try clustering to understand grouping in data so we can separate may be developing vs
+developed countries
+
+From below results, we do not see any such cluster to split. 
+
+```{r}
+library(mclust)
+clus <- Mclust(df)
+summary(clus)
+
+#No clusters seen in original dataset
+```
+Variable selection using BIC and VIF, VIF also increases model performance:
+
+```{r}
+vif(model.step.bic)
+
+#removed one of infant.deaths or under.five.deaths
+```
+```{r}
+df1<-df[,c('Life.expectancy','Status','Adult.Mortality','infant.deaths','under.five.deaths',
+      'Hepatitis.B','BMI','Polio','Diphtheria',
+      'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP_scaled')]
+
+df1$Status <- factor(df1$Status)
+#removed 'under.five.deaths', due to vif - multi collinearity from BIC selection but it decreased model
+#performance so should we retain it?
+head(df1)
+```
+```{r}
+library(mclust)
+clus1 <- Mclust(df1)
+summary(clus1)
+
+#looks like it is finding some clusters, may be developed vs developing? If so, we need to add that info 
+#and build interaction
+```
+
+
+```{r}
+lmmod2 <- lm(Life.expectancy~.,data=df1)
+summary(lmmod2)
+vif(lmmod2)
+```
+
+```{r}
+#rcorr(df1)
+head(df1)
+library(ggplot2)
+ggplot(df1, aes(Adult.Mortality, infant.deaths)) + 
+  geom_tile()
+```
 
 ```{r}
 #str(le)
@@ -311,9 +386,10 @@ summary(glm_model)
 
 ```{r}
 
-head(df[,-3])
+#head(df[,-3])
+head(df[,c(-1,-3)])
 df$Status <- as.numeric(as.factor(df$Status)) #Convert Non-Numeric Columns to Numeric for PCA
-pca_model <- prcomp(df[,-3])
+pca_model <- prcomp(df[,c(-1,-3)],scale.=TRUE)
 summary(pca_model)
 
 ```
