@@ -25,70 +25,57 @@ Also, we will come up with next steps of how to fine tune data further and impro
 ## Data Exploration
 
 ### Original Dataset Summary & Initial Data Screening
-Purpose : Let's take a snapshot of the original dataset and have a rough idea of its records and summary information.
+#### Purpose 
+- Let's take a snapshot of the original dataset and have a rough idea of its record
 
-```{r}
+#### Procedure
+```{r include=FALSE}
 le <- read.csv("dataset/LifeExpectancy.csv")
 summary(le)
 ```
 Let's look at the dataset dimension first
-```{r}
+```{r include=FALSE}
 dim(le)
 ```
 
-Then, have a quick overall screening of the dataset
-```{r}
-#NOTE: might consider to remove this since str(le) provided us same information but in a more presentable 
-#head(le,5)
-
-```
-
-Here is another view :
-```{r}
+Here is another overview :
+```{r include=FALSE}
 str(le)
 ```
 
-From the above broad view, the following Conclusion/Key Findings are reached : 
-
+#### Conclusion/Key Findings : 
 - The records range is from Year 2000 to 2015
 - Columns with NA : Life Expectancy, Adult Mortality, Alcohol, Hep B, BMI, Polio, Total exp, Dip, GDP, Population, thinness..1.19, thinness.5.9, Income.composition.of.resources, Schooling
 - 'Status' Column is of the "character" data type, with values "Developing" and "Developed".  We will introduce a new column 'Status.val' to be the factor value of 'Status' for better analysis..
-- 'Percentage Expenditure' has a mean value of `r mean(le$percentage.expenditure)` and max. value of `r max(le$percentage.expenditure)`.  Spending on health is more than the GDP per capita? Look into the column definition : Expenditure on health as a percentage of Gross Domestic Product per capita(%). The data of such magnitude simply does not quite make sense. Cross check with other references (e.g. the World Bank https://data.worldbank.org/indicator/SH.XPD.CHEX.GD.ZS).  OK, let's conclude that we have hesitation about the reliability/interpretation of the value of this column, and probably would drop and skip this column for the rest of this analysis.
-- 'Population' and 'GDP' have a relatively large scale, compared with all other columns.  So, we may need to scale these two columns.
+- 'Percentage Expenditure' has a mean value of `r mean(le$percentage.expenditure)`.  Spending on health is more than the GDP per capita (!?).  Look into the column definition : Expenditure on health as a percentage of Gross Domestic Product per capita(%). The data of such magnitude simply does not quite make sense. Cross check with other references (e.g. the World Bank https://data.worldbank.org/indicator/SH.XPD.CHEX.GD.ZS).  OK, let's conclude that we have hesitation about the reliability/interpretation of the value of this column, and this column would be dropped for the rest of this analysis.
 
-Now, let's do some data wrangling based on the above conclusions :
-```{r}
+```{r include=FALSE}
 # Create a new column Status.val to represent the Status column with number
 le$Status.val <- ifelse(le$Status == "Developed",1,0)
-
 # Create a new column as the scaled version of the GDP & Population, 
-# removed scaling as per feedback from John, LM must be able to handle unscaled data
-le$GDP_scaled = scale(le$GDP)
-le$Population_scaled = scale(le$Population)
-
+#le$GDP_scaled = scale(le$GDP)
+#le$Population_scaled = scale(le$Population)
 # Remove the unreliable column 
 le <- subset(le,select=-c(percentage.expenditure))
-
 ```
 
 ### Null Value Analysis and Handling
-```{r}
+```{r include=FALSE}
 library(magrittr) 
 library(dplyr)  
 library(tidyr)
 le %>% group_by(Country) %>% summarise(COUNT = n())
 ```
-Purpose : Investigate the and determine how to handle the null value in the data set
+#### Purpose 
+- Investigate the and determine how to handle the null value in the data set.  Missing values could have a large affect to the overall quality of the static models and machine learning models and need to be clean before using it in our training model. 
 
-Missing values could have a large affect to the overall quality of the static models and machine learning models and need to be clean before using it in our training model. 
+#### Procedure
+Lets investigate how many missing values within our features.
 
-Lets investigate how many missing values within our features:
-
-```{r warning = FALSE, message=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(magrittr) 
 library(dplyr)  
 library(tidyr)
-
 missing.values <- le %>%
     gather(key = "key", value = "val") %>%
     mutate(is.missing = is.na(val)) %>%
@@ -97,15 +84,14 @@ missing.values <- le %>%
     filter(is.missing==T) %>%
     select(-is.missing) %>%
     arrange(desc(num.missing)) 
-
 missing.values
 ```
-There are total of 2563 missing value within our dataset, we could visualize the missing data to identify patterns or cluster of missing values within our data to determine the cause of the missing data and whether it is random or systematic and to highlight potential biases that may exist in our data set. Visualizing the missing value also allow to understand the extend of the missing data and determine appropriate strategies for imputing missing value, since different imputation methods could be more appropriate depending on the pattern of the missing data.
 
-```{r}
+A brief check indicates that there are total of 2563 missing value within our dataset, we could visualize the missing data to identify patterns or cluster of missing values within our data to determine the cause of the missing data and whether it is random or systematic and to highlight potential biases that may exist in our data set. Visualizing the missing value also allow to understand the extend of the missing data and determine appropriate strategies for imputing missing value, since different imputation methods could be more appropriate depending on the pattern of the missing data.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(ggplot2)
 library(gridExtra)
-
 missing.values <- le %>%
   gather(key="key", value="val") %>%
   mutate(isna=is.na(val)) %>%
@@ -114,19 +100,16 @@ missing.values <- le %>%
   group_by(key,total,isna) %>%
   summarise(num.isna=n()) %>%
   mutate(pct=num.isna/total * 100)
-
 levels <- (missing.values%>%filter(isna==T) %>% arrange(desc(pct)))$key
-
 null_percentage.plot <- missing.values %>% ggplot() +
-        geom_bar(aes(x = reorder(key, desc(pct)),
+        geom_bar(aes(x = reorder(key, desc(pct)), 
                      y = pct, fill=isna), stat='identity', alpha=0.8) +
       scale_x_discrete(limits = levels) +
-      scale_fill_manual(name = "",
-                        values = c('dodgerblue2', 'coral'),
+      scale_fill_manual(name = "", 
+                        values = c('dodgerblue2', 'coral'), 
                         labels = c("Present", "Missing")) +
-      coord_flip() + labs(title = "Percentage of missing values",
+      coord_flip() + labs(title = "Percentage of missing values", 
                           x = 'Features', y = "% of missing values")
-
 null_inrow.plot <- le %>%
   mutate(id = row_number()) %>%
   gather(-id, key = "key", value = "val") %>%
@@ -139,10 +122,9 @@ null_inrow.plot <- le %>%
     scale_x_discrete(limits = levels) +
     labs(x = "Features", y = "Row Number", title = "Missing values in rows") +
     coord_flip()
-
 library(dplyr)
-le_dropped <- le %>% filter_at(vars(Population_scaled,Population,GDP,GDP_scaled,Income.composition.of.resources,Schooling),any_vars(!is.na(.)))
-
+#le_dropped <- le %>% filter_at(vars(Population_scaled,Population,GDP,GDP_scaled,Income.composition.of.resources,Schooling),any_vars(!is.na(.)))
+le_dropped <- le %>% filter_at(vars(Population,GDP,Income.composition.of.resources,Schooling),any_vars(!is.na(.)))
 missing.values <- le_dropped %>%
   gather(key="key", value="val") %>%
   mutate(isna=is.na(val)) %>%
@@ -151,21 +133,17 @@ missing.values <- le_dropped %>%
   group_by(key,total,isna) %>%
   summarise(num.isna=n()) %>%
   mutate(pct=num.isna/total * 100)
-
 missing.values
-
 levels <- (missing.values%>%filter(isna==T) %>% arrange(desc(pct)))$key
-
 null_percentage_dropped.plot <- missing.values %>% ggplot() +
-        geom_bar(aes(x = reorder(key, desc(pct)),
+        geom_bar(aes(x = reorder(key, desc(pct)), 
                      y = pct, fill=isna), stat='identity', alpha=0.8) +
       scale_x_discrete(limits = levels) +
-      scale_fill_manual(name = "",
-                        values = c('dodgerblue2', 'coral'),
+      scale_fill_manual(name = "", 
+                        values = c('dodgerblue2', 'coral'), 
                         labels = c("Present", "Missing")) +
-      coord_flip() + labs(title = "Percentage of missing values after dropping some common null value records",
+      coord_flip() + labs(title = "Percentage of missing values after dropping some common null value records", 
                           x = 'Features', y = "% of missing values")
-
 null_inrow_dropped.plot <- le_dropped %>%
   mutate(id = row_number()) %>%
   gather(-id, key = "key", value = "val") %>%
@@ -178,36 +156,44 @@ null_inrow_dropped.plot <- le_dropped %>%
     scale_x_discrete(limits = levels) +
     labs(x = "Features", y = "Row Number", title = "Missing values in rows after dropping some common null value records") +
     coord_flip()
-
 options(repr.plot.width = 30, repr.plot.height = 60)
-
-gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot,null_percentage_dropped.plot, null_inrow_dropped.plot, ncol = 2)
-
-
+gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot, ncol = 1)
+gridExtra::grid.arrange(null_percentage_dropped.plot, null_inrow_dropped.plot, ncol = 1)
 ```
 
-There are `r dim(le)[1]` no. of rows in the dataset. Acording to our Visualization on left, there seems to be a correlation in the appearance in missing data in our orginal data's feature "population", "gdp" , "income.composition.of.resources" and "schooling". We could deal with this correlation in missing data by removing the the record that have missing value in all of the listed variables.
+There are `r dim(le)[1]` no. of rows in the dataset. According to our Visualization, there seems to be a correlation in the appearance in missing data in our original data's feature "population", "gdp" , "income.composition.of.resources" and "schooling". We would deal with this correlation in missing data by removing the the record that have missing value in all of the listed variables.
 
-#Check how much records do each country have:
-```{r}
+<!-- Check how much records do each country have:  -->
+```{r include=FALSE}
 le %>% group_by(Country) %>% summarise(COUNT = n())
 le_dropped %>% group_by(Country) %>% summarise(COUNT = n()) #12 country were removed after dropping some common null value (193-181)
-
 #might need to consider not using this variable 
 ```
 
+<!-- ########Since we have a better approach, we might need to remove this############ -->
+<!-- Let's set the threshold of 20% as the max. proportion of null column to be allowed in a data column.  That means, columns with na over 20% will be dropped.  The threshold is then  `r dim(le)[1] * 0.2`.  So, the following 'Population' column will be dropped.  -->
+<!-- ____________________________________________________ -->
 
-For the other values, we will set the na to the respective column mean for the subsequent analysis.
+<!-- #head(le) -->
+<!-- le <- subset(le,select=-c(Population)) -->
+<!-- # also Population_Scaled -->
+<!-- #le <- subset(le,select=-c(Population_scaled)) -->
 
-```{r message=FALSE, warning=FALSE}
+<!-- ____________________________________________________ -->
+<!-- ################################################################################# -->
 
+For the other values, we would set the na to the respective column mean for the subsequent analysis.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
 for(i in 1:ncol(le_dropped)) {                                   # Replace NA in all columns
   le_dropped[ , i][is.na(le_dropped[ , i])] <- mean(le_dropped[ , i], na.rm = TRUE)
 }
-
 ```
 
-Now, all na have been handled!  Let's continue our analysis.
+#### Conclusion/Key Findings :
+
+- na values have been analyzed 
+- Data imputation have been performed as far as possible in order to prepare for the subsequent data analysis.
 
 ## Statistical Analysis
 
@@ -300,7 +286,9 @@ Findings :
 head(le_dropped)
 ```
 ```{r}
-df = subset(le_dropped, select = -c(Country,GDP,Population) )
+
+#df = subset(le_dropped, select = -c(Country,GDP,Population) )
+df = subset(le_dropped, select = -c(Country) )
 #head(df)
 ```
 
@@ -379,11 +367,16 @@ vif(model.step.bic)
 
 
 
-Upon removing the variable 'under.five.deaths’ due to the multicollinearity concern that we have seen from the VIF(Variance Inflation Factor) output is giving a lower model performance, so we will retain it moving forward. Here we update our data to our BIC-selected variable. 
+Upon removing the variable 'under.five.deaths’ due to the multicollinearity concern that we have seen from the VIF(Variance Inflation Factor) output is giving a lower model performance, so we will retain it moving forward. Here we update our data to our BIC-selected variable.
+
+```{r}
+colnames(df)
+```
+
 ```{r}
 df1<-df[,c('Life.expectancy','Status','Adult.Mortality','infant.deaths','under.five.deaths',
       'Hepatitis.B','BMI','Polio','Diphtheria',
-      'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP_scaled')]
+      'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP')]
 
 df1$Status <- factor(df1$Status)
 #removed 'under.five.deaths', due to vif - multi collinearity from BIC selection but it decreased model
