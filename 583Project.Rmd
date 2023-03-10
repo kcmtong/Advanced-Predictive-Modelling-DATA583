@@ -14,11 +14,19 @@ geometry: margin=2cm
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## EDA
+## Data 583 Life Expectancy - Exploratory Data Analysis
+## Life Expectancy
 
+## Introduction
+We selected "this" dataset and our goal is to understand LE. in this document, we will take a detailed look at different aspects about variables, summary and apply statistical techniques to understand the underlying data more.
+Also, we will come up with next steps of how to fine tune data further and improve modeling
+<<needs fine tuning>>. (Some 4 to 5 lines in total)
+
+## Data Exploration
 
 ### Original Dataset Summary & Initial Data Screening
-Purpose : Let's take a snapshot of the original dataset and have a rough idea of its record
+Purpose : Let's take a snapshot of the original dataset and have a rough idea of its records and summary information.
+
 ```{r}
 le <- read.csv("dataset/LifeExpectancy.csv")
 summary(le)
@@ -54,8 +62,9 @@ Now, let's do some data wrangling based on the above conclusions :
 le$Status.val <- ifelse(le$Status == "Developed",1,0)
 
 # Create a new column as the scaled version of the GDP & Population, 
-le$GDP_scaled = scale(le$GDP)
-le$Population_scaled = scale(le$Population)
+# removed scaling as per feedback from John, LM must be able to handle unscaled data
+#le$GDP_scaled = scale(le$GDP)
+#le$Population_scaled = scale(le$Population)
 
 # Remove the unreliable column 
 le <- subset(le,select=-c(percentage.expenditure))
@@ -109,13 +118,13 @@ missing.values <- le %>%
 levels <- (missing.values%>%filter(isna==T) %>% arrange(desc(pct)))$key
 
 null_percentage.plot <- missing.values %>% ggplot() +
-        geom_bar(aes(x = reorder(key, desc(pct)), 
+        geom_bar(aes(x = reorder(key, desc(pct)),
                      y = pct, fill=isna), stat='identity', alpha=0.8) +
       scale_x_discrete(limits = levels) +
-      scale_fill_manual(name = "", 
-                        values = c('dodgerblue2', 'coral'), 
+      scale_fill_manual(name = "",
+                        values = c('dodgerblue2', 'coral'),
                         labels = c("Present", "Missing")) +
-      coord_flip() + labs(title = "Percentage of missing values", 
+      coord_flip() + labs(title = "Percentage of missing values",
                           x = 'Features', y = "% of missing values")
 
 null_inrow.plot <- le %>%
@@ -148,13 +157,13 @@ missing.values
 levels <- (missing.values%>%filter(isna==T) %>% arrange(desc(pct)))$key
 
 null_percentage_dropped.plot <- missing.values %>% ggplot() +
-        geom_bar(aes(x = reorder(key, desc(pct)), 
+        geom_bar(aes(x = reorder(key, desc(pct)),
                      y = pct, fill=isna), stat='identity', alpha=0.8) +
       scale_x_discrete(limits = levels) +
-      scale_fill_manual(name = "", 
-                        values = c('dodgerblue2', 'coral'), 
+      scale_fill_manual(name = "",
+                        values = c('dodgerblue2', 'coral'),
                         labels = c("Present", "Missing")) +
-      coord_flip() + labs(title = "Percentage of missing values after dropping some common null value records", 
+      coord_flip() + labs(title = "Percentage of missing values after dropping some common null value records",
                           x = 'Features', y = "% of missing values")
 
 null_inrow_dropped.plot <- le_dropped %>%
@@ -200,18 +209,19 @@ for(i in 1:ncol(le_dropped)) {                                   # Replace NA in
 
 Now, all na have been handled!  Let's continue our analysis.
 
+## Statistical Analysis
 
+Purpose : Do some visualization to explore and identify the general data pattern, trends and clusters, etc
 
+### General Life Expectancy
 
-### Overall General Life Expectancy Trend
-
-Purpose : Do some visualisation to explore and identify the general data pattern, trends and clusters, etc
+As we are interested in Life Expectancy as our response variable, we first start looking at the distribution of the variable and general trend.
 
 ```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
 library(ggplot2)
 #install.packages("tidyverse")
 library(tidyverse)
-
+par(mfrow=c(1,2))
 le_dropped %>%
   group_by(Year) %>%
   summarise(Life.expectancy = mean(Life.expectancy)) %>%
@@ -270,26 +280,48 @@ Findings :
 - The mortality rate of all three age groups are generally decreasing as a whole
 - The mortality rate of the adult group, however, have fluctuation within the period
 
+```{r}
+library(Hmisc)
+hist(df$Life.expectancy)
+```
+Findings :
+- As we see, the response variable Life Expectancy is normally distributed and so our first try is to see if MLR is able to predict well. 
+- Also, using this model and running a BIC on it, we can understand the columns that are important.
 
 
-
-###Variable Selections (BIC backwards):
 
 ```{r}
-#head(le_dropped)
+head(le_dropped)
 ```
 ```{r}
 df = subset(le_dropped, select = -c(Country,GDP,Population) )
 #head(df)
 ```
-Let's look at the distribution of different columns in the dataset.
+
+## Predictor Space
+
+We now turn our focus to look at the different predictor variables. Following shows the correlation of different variables and their spread in the dataset.
 ```{r}
-#library(Hmisc)
-#hist.data.frame(df)
+colnames(df1)
 ```
-As we see, the response variable Life Expectancy is normally distributed and so our first try is to see if 
-MLR is able to predict well. Also, using this model and running a BIC on it, we can understand the columns that are
-important.
+
+```{r}
+
+#install.packages(GGally)
+library(GGally)
+ggcorr(df1,palette = "RdBu", size=2,label=TRUE)
+
+```
+infant.deaths and under.five.deaths is nearly 100% correlated with each other and Polio is highly correlated with Diphtheria, Income composition of resources is highly correlated with Schooling.
+Other variables are low to moderately correlated.
+The response variable Life expectancy is highly correlated with Income composition, Schooling and adult mortality variables.
+
+### Initial Modelling and Variable Importance:
+
+As response variable Life.Expectancy is approximately normally distributed, first step is to try lm model for this data and also run BIC to get the variable selection from the dataset.
+
+The dataset has 20+ predictors and based on correlation plot there are correlation between the variables, BIC would help to eliminate some of the predictors that are conveying same signal as others and also explains less variability in life expectancy.
+
 ```{r}
 lmmod <- lm(Life.expectancy~., data = df)
 summary(lmmod)
@@ -314,11 +346,12 @@ Standardized Residuals versus Leverage plot:
 
 
 
-  Since the original model contains 20 dependent variables, this could be a concern since all variables might not be relevant to our response variable and could decrease the precision and increase the complicity/interpretability of the statistical model. Therefore we will perform BIC (Bayesian Information Criterion) variable selection to identify the most relevant variables in the data set. This method could allow us to come up with the simplest model that is still able to explain the data well and performing BIC variable selection could also help us in avoid overfitting, which occurs when a model fits the noise in data rather than the underlying relationships.
+  Since the original model contains 20 dependent variables, this could be a concern since all variables might not be relevant to our response variable and could decrease the precision and increase the complexity/interpretability of the statistical model. Therefore we will perform BIC (Bayesian Information Criterion) variable selection to identify the most relevant variables in the data set. This method could allow us to come up with the simplest model that is still able to explain the data well and performing BIC variable selection could also help us in avoid overfitting, which occurs when a model fits the noise in data rather than the underlying relationships.
 
 ```{r}
 model.step.bic <- step(lmmod,k=log(nrow(df)))
 summary(model.step.bic)
+#summary must be visible in report whereas full model BIC output need not be visible
 ```
 
 Initially, all 20 variables were used in our model and achieved an AIC score of 7642.14:
@@ -330,20 +363,6 @@ After performing BIC backward step model selection method:
 Life.expectancy ~ Status + Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + thinness..1.19.years + Income.composition.of.resources + Schooling + GDP_scaled
 
 The BIC backward step model selection method has reduced our model’s independent variable to 13 and achieved a lower AIC score of 7604.34. Since a lower AIC score signifies the regression is a better fit to the data, meaning that after removing some irrelevant variable in our data set, the simple model is still able to explain the data well well and has improved the fitting from the initial model. Also the final reduced model has an Adjusted R-squared score of 0.8296 compared to the original model’s 0.8299 isn’t much of a drop in the Adjusted R-squared score meaning even tho we are using fewer variables in our model, our BIC reduced model was still able to have the same amount of variability being explained by our original model.
-
-
-
-Rather than performing a linear model of our data, we will investigate whether it is possible to group our data into a different groups using clustering methods.
-
-```{r}
-library(mclust)
-clus <- Mclust(df)
-summary(clus)
-
-#No clusters seen in original dataset
-```
-
-From the above results, this data seems not able to be able to separate by clustering.
 
 Now going back to variable selection, this time we will be using VIF(Variance Inflation Factor) to investigate whether it is possible to come up with a better model from BIC reduced model by eliminating some highly correlated variables in the data. 
 ```{r}
@@ -368,7 +387,7 @@ df1$Status <- factor(df1$Status)
 #head(df1)
 ```
 
-After doing variable reduction, Mclust were ablue to group our data using clustering, may be it is because of variable “Status”’s developed vs developing. If so, we need to add that info and build interaction.
+After doing variable reduction, checking for any clustering effects in data. 
 
 ```{r}
 library(mclust)
@@ -378,6 +397,7 @@ summary(clus1)
 #looks like it is finding some clusters, may be developed vs developing? If so, we need to add that info 
 #and build interaction
 ```
+Looks like there are some clusters in the data, it could be it is because of variable “Status”’s developed vs developing. Acknowledging this information which may be helpful in future phases of model building and fine tuning. For example, if MLR would be the final model, building interaction with cluster variable and rest of data would further improve model performance.
 
 Using our reduced model, we feed that data to Linear Model and achieve an Adjusted R-squared of 0.8296 and all variables have a p-value of less the 0.05, meaning that all of our independent variables within the model is statically significant to our dependent variable, In other words, there is strong evidence against the null hypothesis, suggesting that the observed relation between other dependent variable and independent variable is significant and real, not just due to random variation or chance.
 
@@ -386,14 +406,30 @@ lmmod2 <- lm(Life.expectancy~.,data=df1)
 summary(lmmod2)
 vif(lmmod2)
 ```
+### Key Findings
+Summarized below are some key findings from EDA.
+- Response variable is looking to be normally distributed and initial model score is ~82% which means this model is able to explain 82% of variation in Life expectancy. Its possible to use multiple linear regression for this data. From the diagnostic plots it may be seen that there is skewness in the data.
+- There are some variables that suffer multi collinearity (from VIF) scores.
+- Not all predictors are necessary to describe response variable. Model selection will be helpful.
 
-```{r}
-#rcorr(df1)
-head(df1)
-library(ggplot2)
-ggplot(df1, aes(Adult.Mortality, infant.deaths)) + 
-  geom_tile()
-```
+Due to the spread of data (clustering, non-linearity of predictors w response variable, skewness in data), it is necessary to explore other models specifically non-parametric regression models.
+
+
+## Questions and Next Steps
+
+1. Does the variables selected using BIC and linear model able to explain Life Expectancy adequately? A hypotheses test is required for this.
+
+2. Is the response variable normally distributed? Shapiro-Wilk test for normality will need to be conducted for this.
+
+3. Is Multi linear regression the best model or go with other non parametric models? From initial feedback, there are hypotheses tests available to validate this.
+
+Need to explore further on these questions from proposal stage and conclude.
+4. Understanding impact of individually controlled factors - The dataset has all predicting variables divided into 4 groups: Immunization related factors, Mortality factors, Economical factors and Social factors. Some of these factors are controllable by individuals like immunization, alcohol etc. Some of these factors are noncontrollable and macro elements like GDP. If an individual within a country want to improve life expectancy, how much is controllable/can be influenced personally? What proportion of variation in life expectancy can be explained by these variables? For example, What is the effect of “Alcohol/BMI” on the life expectancy?
+
+5. Understanding impact of Government/Public controlled factors - From Government perspective, how are the preventive measures influencing life expectancy? What proportion of variation in life expectancy can be explained by these variables? For example, Does Higher health expenditure (column H) on Health improve life expectancy?
+
+## Extra - add if there is page available
+
 
 ```{r}
 #str(le)
