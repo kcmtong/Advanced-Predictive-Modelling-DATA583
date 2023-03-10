@@ -63,8 +63,8 @@ le$Status.val <- ifelse(le$Status == "Developed",1,0)
 
 # Create a new column as the scaled version of the GDP & Population, 
 # removed scaling as per feedback from John, LM must be able to handle unscaled data
-#le$GDP_scaled = scale(le$GDP)
-#le$Population_scaled = scale(le$Population)
+le$GDP_scaled = scale(le$GDP)
+le$Population_scaled = scale(le$Population)
 
 # Remove the unreliable column 
 le <- subset(le,select=-c(percentage.expenditure))
@@ -280,10 +280,16 @@ Findings :
 - The mortality rate of all three age groups are generally decreasing as a whole
 - The mortality rate of the adult group, however, have fluctuation within the period
 
+
 ```{r}
-library(Hmisc)
-hist(df$Life.expectancy)
+colnames(df)
 ```
+
+#```{r}
+#library(Hmisc)
+#hist.data.frame(df)
+#```
+
 Findings :
 - As we see, the response variable Life Expectancy is normally distributed and so our first try is to see if MLR is able to predict well. 
 - Also, using this model and running a BIC on it, we can understand the columns that are important.
@@ -301,15 +307,13 @@ df = subset(le_dropped, select = -c(Country,GDP,Population) )
 ## Predictor Space
 
 We now turn our focus to look at the different predictor variables. Following shows the correlation of different variables and their spread in the dataset.
-```{r}
-colnames(df1)
-```
+
 
 ```{r}
 
 #install.packages(GGally)
 library(GGally)
-ggcorr(df1,palette = "RdBu", size=2,label=TRUE)
+ggcorr(df,palette = "RdBu", size=2,label=TRUE)
 
 ```
 infant.deaths and under.five.deaths is nearly 100% correlated with each other and Polio is highly correlated with Diphtheria, Income composition of resources is highly correlated with Schooling.
