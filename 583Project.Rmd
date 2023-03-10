@@ -3,9 +3,9 @@ title: "Data 583 Life Expectancy (WHO)"
 author: "Justin Chan, Kenny Tong, Viji Rajagopalan"
 date: "7 Mar, 2023"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 fontsize: 10pt
 geometry: margin=2cm
 ---
@@ -29,17 +29,18 @@ Also, we will come up with next steps of how to fine tune data further and impro
 - Let's take a snapshot of the original dataset and have a rough idea of its record
 
 #### Procedure
+Take a look at the dataset summary.
 ```{r include=FALSE}
 le <- read.csv("dataset/LifeExpectancy.csv")
 summary(le)
 ```
-Let's look at the dataset dimension first
+Then look at the dataset dimension.
 ```{r include=FALSE}
 dim(le)
 ```
 
 Here is another overview :
-```{r include=FALSE}
+```{r echo=FALSE}
 str(le)
 ```
 
@@ -89,7 +90,7 @@ missing.values
 
 A brief check indicates that there are total of 2563 missing value within our dataset, we could visualize the missing data to identify patterns or cluster of missing values within our data to determine the cause of the missing data and whether it is random or systematic and to highlight potential biases that may exist in our data set. Visualizing the missing value also allow to understand the extend of the missing data and determine appropriate strategies for imputing missing value, since different imputation methods could be more appropriate depending on the pattern of the missing data.
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(ggplot2)
 library(gridExtra)
 missing.values <- le %>%
@@ -164,7 +165,7 @@ gridExtra::grid.arrange(null_percentage_dropped.plot, null_inrow_dropped.plot, n
 There are `r dim(le)[1]` no. of rows in the dataset. According to our Visualization, there seems to be a correlation in the appearance in missing data in our original data's feature "population", "gdp" , "income.composition.of.resources" and "schooling". We would deal with this correlation in missing data by removing the the record that have missing value in all of the listed variables.
 
 <!-- Check how much records do each country have:  -->
-```{r include=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 le %>% group_by(Country) %>% summarise(COUNT = n())
 le_dropped %>% group_by(Country) %>% summarise(COUNT = n()) #12 country were removed after dropping some common null value (193-181)
 #might need to consider not using this variable 
@@ -203,7 +204,7 @@ Purpose : Do some visualization to explore and identify the general data pattern
 
 As we are interested in Life Expectancy as our response variable, we first start looking at the distribution of the variable and general trend.
 
-```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+```{r echo=FALSE, fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
 library(ggplot2)
 #install.packages("tidyverse")
 library(tidyverse)
@@ -224,7 +225,7 @@ Findings :
 
 
 
-```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+```{r echo=FALSE, fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
 le_dropped %>%
   group_by(Status) %>%
   summarise(Life.expectancy = mean(Life.expectancy)) %>%
@@ -238,7 +239,7 @@ Finding :
 
 - Life expectancy of Developed countries are significantly higher than that of Developing countries.
 
-```{r fig.height=3, message=FALSE, warning=FALSE}
+```{r echo=FALSE, fig.height=3, message=FALSE, warning=FALSE}
 le_dropped.pivot <- pivot_longer(le_dropped,c(Adult.Mortality,under.five.deaths,infant.deaths),names_to='Mortality.Group',values_to='Mortality.Rate')
 require(gridExtra)
 
@@ -267,8 +268,8 @@ Findings :
 - The mortality rate of the adult group, however, have fluctuation within the period
 
 
-```{r}
-colnames(df)
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#colnames(df)
 ```
 
 #```{r}
@@ -282,10 +283,10 @@ Findings :
 
 
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 head(le_dropped)
 ```
-```{r}
+```{r include=FALSE}
 
 #df = subset(le_dropped, select = -c(Country,GDP,Population) )
 df = subset(le_dropped, select = -c(Country) )
@@ -297,7 +298,7 @@ df = subset(le_dropped, select = -c(Country) )
 We now turn our focus to look at the different predictor variables. Following shows the correlation of different variables and their spread in the dataset.
 
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 
 #install.packages(GGally)
 library(GGally)
@@ -314,11 +315,12 @@ As response variable Life.Expectancy is approximately normally distributed, firs
 
 The dataset has 20+ predictors and based on correlation plot there are correlation between the variables, BIC would help to eliminate some of the predictors that are conveying same signal as others and also explains less variability in life expectancy.
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 lmmod <- lm(Life.expectancy~., data = df)
 summary(lmmod)
 ```
-```{r}
+
+```{r echo=FALSE}
 plot(lmmod)
 ```
 Residuals versus Fits plot:
@@ -340,7 +342,7 @@ Standardized Residuals versus Leverage plot:
 
   Since the original model contains 20 dependent variables, this could be a concern since all variables might not be relevant to our response variable and could decrease the precision and increase the complexity/interpretability of the statistical model. Therefore we will perform BIC (Bayesian Information Criterion) variable selection to identify the most relevant variables in the data set. This method could allow us to come up with the simplest model that is still able to explain the data well and performing BIC variable selection could also help us in avoid overfitting, which occurs when a model fits the noise in data rather than the underlying relationships.
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 model.step.bic <- step(lmmod,k=log(nrow(df)))
 summary(model.step.bic)
 #summary must be visible in report whereas full model BIC output need not be visible
@@ -357,7 +359,7 @@ Life.expectancy ~ Status + Adult.Mortality + infant.deaths + Hepatitis.B + BMI +
 The BIC backward step model selection method has reduced our model’s independent variable to 13 and achieved a lower AIC score of 7604.34. Since a lower AIC score signifies the regression is a better fit to the data, meaning that after removing some irrelevant variable in our data set, the simple model is still able to explain the data well well and has improved the fitting from the initial model. Also the final reduced model has an Adjusted R-squared score of 0.8296 compared to the original model’s 0.8299 isn’t much of a drop in the Adjusted R-squared score meaning even tho we are using fewer variables in our model, our BIC reduced model was still able to have the same amount of variability being explained by our original model.
 
 Now going back to variable selection, this time we will be using VIF(Variance Inflation Factor) to investigate whether it is possible to come up with a better model from BIC reduced model by eliminating some highly correlated variables in the data. 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(car)
 vif(model.step.bic)
 
@@ -369,11 +371,11 @@ vif(model.step.bic)
 
 Upon removing the variable 'under.five.deaths’ due to the multicollinearity concern that we have seen from the VIF(Variance Inflation Factor) output is giving a lower model performance, so we will retain it moving forward. Here we update our data to our BIC-selected variable.
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 colnames(df)
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 df1<-df[,c('Life.expectancy','Status','Adult.Mortality','infant.deaths','under.five.deaths',
       'Hepatitis.B','BMI','Polio','Diphtheria',
       'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP')]
@@ -386,7 +388,7 @@ df1$Status <- factor(df1$Status)
 
 After doing variable reduction, checking for any clustering effects in data. 
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(mclust)
 clus1 <- Mclust(df1)
 summary(clus1)
@@ -398,7 +400,7 @@ Looks like there are some clusters in the data, it could be it is because of var
 
 Using our reduced model, we feed that data to Linear Model and achieve an Adjusted R-squared of 0.8296 and all variables have a p-value of less the 0.05, meaning that all of our independent variables within the model is statically significant to our dependent variable, In other words, there is strong evidence against the null hypothesis, suggesting that the observed relation between other dependent variable and independent variable is significant and real, not just due to random variation or chance.
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 lmmod2 <- lm(Life.expectancy~.,data=df1)
 summary(lmmod2)
 vif(lmmod2)
@@ -428,7 +430,7 @@ Need to explore further on these questions from proposal stage and conclude.
 ## Extra - add if there is page available
 
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 #str(le)
 class(df$Country)
 glm_model <- glm(Life.expectancy~., data = df, family = "gaussian")
@@ -441,7 +443,7 @@ summary(glm_model)
 ###############PCA(suggest a simpler scoring system):##########################
 ###############################################################################
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 
 #head(df[,-3])
 head(df[,c(-1,-3)])
@@ -450,12 +452,12 @@ pca_model <- prcomp(df[,c(-1,-3)],scale.=TRUE)
 summary(pca_model)
 
 ```
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 #Use Sceen Plot to decide how many PC to keep, But there seems to be a large value in our PC1 Standard Deviation so it isn't a clear indicator.
 
 plot(pca_model, type="lines")
 ```
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 #Use Standard deviation instead to decide how many PC to keep, if it is below 1 we toss it out since it does not explain much info about our data.it is suggest us to keep 15 PC.
 
 pca_model$rotation[,1:15]
