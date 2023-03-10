@@ -2,9 +2,9 @@
 title: "Data 583 Life Expectancy (WHO)"
 author: "Justin Chan, Kenny Tong, Viji Rajagopalan"
 date: "7 Mar, 2023"
-output: pdf_document
-fontsize: 10pt
-geometry: margin=2cm
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
@@ -247,6 +247,8 @@ le_dropped %>%
   geom_bar(stat = "identity")+ scale_fill_manual(values=c('dodgerblue2', 'coral'))
 
 ```
+
+
 Finding :
 
 - Life expectancy of Developed countries are significantly higher than that of Developing countries.
@@ -302,7 +304,8 @@ head(df)
 Let's look at the distribution of different columns in the dataset.
 ```{r}
 #install.packages("Hmisc")
-#library(Hmisc)
+#library(ggplot2)
+#library(tidyr)
 #hist.data.frame(df)
 ```
 As we see, the response variable Life Expectancy is normally distributed and so our first try is to see if 
@@ -338,7 +341,6 @@ summary(clus)
 Variable selection using BIC and VIF, VIF also increases model performance:
 
 ```{r}
-install.packages("car")
 library(car)
 vif(model.step.bic)
 
@@ -402,7 +404,7 @@ plot(ladf$glmnet.fit, label=TRUE, xvar="lambda")
 plot(ladf)
 
 coef(ladf) #thinness.5.9.years is removed since the coefficients went to 0
-````
+```
 ```{r}
 library("glmnet")
 df$Status <- as.numeric(as.factor(df$Status)) #Convert Non-Numeric Columns to Numeric for glmnet
@@ -416,7 +418,7 @@ plot(ladf$glmnet.fit, label=TRUE, xvar="lambda")
 plot(ladf)
 
 coef(ladf)
-````
+```
 
 
 
@@ -447,11 +449,11 @@ pca_model$rotation[,1:15]
 #########################################FA:(not working)###################################
 ###############################################################################
 
-```{r}
+
 df2 = subset(le_dropped, select = -c(Country,GDP_scaled,Population_scaled) )
 head(df2)
 
 head(df)
 fa_model <- factanal(df2, factors = 13)
 
-```
+
