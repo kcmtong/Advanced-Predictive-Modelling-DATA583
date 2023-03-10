@@ -5,8 +5,9 @@ date: "7 Mar, 2023"
 output:
   html_document:
     df_print: paged
-  pdf_document:
-    latex_engine: xelatex
+  pdf_document: default
+fontsize: 10pt
+geometry: margin=2cm
 ---
 
 ```{r setup, include=FALSE}
@@ -17,37 +18,44 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ### Original Dataset Summary & Initial Data Screening
-#### Purpose 
-- Let's take a snapshot of the original dataset and have a rough idea of its record
-
-#### Procedure
-```{r include=FALSE}
+Purpose : Let's take a snapshot of the original dataset and have a rough idea of its record
+```{r}
 le <- read.csv("dataset/LifeExpectancy.csv")
 summary(le)
 ```
 Let's look at the dataset dimension first
-```{r include=FALSE}
+```{r}
 dim(le)
 ```
 
-Here is another overview :
-```{r include=FALSE}
+Then, have a quick overall screening of the dataset
+```{r}
+#NOTE: might consider to remove this since str(le) provided us same information but in a more presentable 
+#head(le,5)
+
+```
+
+Here is another view :
+```{r}
 str(le)
 ```
 
-#### Conclusion/Key Findings : 
+From the above broad view, the following Conclusion/Key Findings are reached : 
+
 - The records range is from Year 2000 to 2015
 - Columns with NA : Life Expectancy, Adult Mortality, Alcohol, Hep B, BMI, Polio, Total exp, Dip, GDP, Population, thinness..1.19, thinness.5.9, Income.composition.of.resources, Schooling
 - 'Status' Column is of the "character" data type, with values "Developing" and "Developed".  We will introduce a new column 'Status.val' to be the factor value of 'Status' for better analysis..
-- 'Percentage Expenditure' has a mean value of `r mean(le$percentage.expenditure)`.  Spending on health is more than the GDP per capita (!?).  Look into the column definition : Expenditure on health as a percentage of Gross Domestic Product per capita(%). The data of such magnitude simply does not quite make sense. Cross check with other references (e.g. the World Bank https://data.worldbank.org/indicator/SH.XPD.CHEX.GD.ZS).  OK, let's conclude that we have hesitation about the reliability/interpretation of the value of this column, and this column would be dropped for the rest of this analysis.
+- 'Percentage Expenditure' has a mean value of `r mean(le$percentage.expenditure)` and max. value of `r max(le$percentage.expenditure)`.  Spending on health is more than the GDP per capita? Look into the column definition : Expenditure on health as a percentage of Gross Domestic Product per capita(%). The data of such magnitude simply does not quite make sense. Cross check with other references (e.g. the World Bank https://data.worldbank.org/indicator/SH.XPD.CHEX.GD.ZS).  OK, let's conclude that we have hesitation about the reliability/interpretation of the value of this column, and probably would drop and skip this column for the rest of this analysis.
+- 'Population' and 'GDP' have a relatively large scale, compared with all other columns.  So, we may need to scale these two columns.
 
-```{r include=FALSE}
+Now, let's do some data wrangling based on the above conclusions :
+```{r}
 # Create a new column Status.val to represent the Status column with number
 le$Status.val <- ifelse(le$Status == "Developed",1,0)
 
 # Create a new column as the scaled version of the GDP & Population, 
-#le$GDP_scaled = scale(le$GDP)
-#le$Population_scaled = scale(le$Population)
+le$GDP_scaled = scale(le$GDP)
+le$Population_scaled = scale(le$Population)
 
 # Remove the unreliable column 
 le <- subset(le,select=-c(percentage.expenditure))
@@ -55,19 +63,19 @@ le <- subset(le,select=-c(percentage.expenditure))
 ```
 
 ### Null Value Analysis and Handling
-```{r include=FALSE}
+```{r}
 library(magrittr) 
 library(dplyr)  
 library(tidyr)
 le %>% group_by(Country) %>% summarise(COUNT = n())
 ```
-#### Purpose 
-- Investigate the and determine how to handle the null value in the data set.  Missing values could have a large affect to the overall quality of the static models and machine learning models and need to be clean before using it in our training model. 
+Purpose : Investigate the and determine how to handle the null value in the data set
 
-#### Procedure
-Lets investigate how many missing values within our features.
+Missing values could have a large affect to the overall quality of the static models and machine learning models and need to be clean before using it in our training model. 
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+Lets investigate how many missing values within our features:
+
+```{r warning = FALSE, message=FALSE}
 library(magrittr) 
 library(dplyr)  
 library(tidyr)
@@ -83,10 +91,9 @@ missing.values <- le %>%
 
 missing.values
 ```
+There are total of 2563 missing value within our dataset, we could visualize the missing data to identify patterns or cluster of missing values within our data to determine the cause of the missing data and whether it is random or systematic and to highlight potential biases that may exist in our data set. Visualizing the missing value also allow to understand the extend of the missing data and determine appropriate strategies for imputing missing value, since different imputation methods could be more appropriate depending on the pattern of the missing data.
 
-A brief check indicates that there are total of 2563 missing value within our dataset, we could visualize the missing data to identify patterns or cluster of missing values within our data to determine the cause of the missing data and whether it is random or systematic and to highlight potential biases that may exist in our data set. Visualizing the missing value also allow to understand the extend of the missing data and determine appropriate strategies for imputing missing value, since different imputation methods could be more appropriate depending on the pattern of the missing data.
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r}
 library(ggplot2)
 library(gridExtra)
 
@@ -125,8 +132,7 @@ null_inrow.plot <- le %>%
     coord_flip()
 
 library(dplyr)
-#le_dropped <- le %>% filter_at(vars(Population_scaled,Population,GDP,GDP_scaled,Income.composition.of.resources,Schooling),any_vars(!is.na(.)))
-le_dropped <- le %>% filter_at(vars(Population,GDP,Income.composition.of.resources,Schooling),any_vars(!is.na(.)))
+le_dropped <- le %>% filter_at(vars(Population_scaled,Population,GDP,GDP_scaled,Income.composition.of.resources,Schooling),any_vars(!is.na(.)))
 
 missing.values <- le_dropped %>%
   gather(key="key", value="val") %>%
@@ -166,37 +172,25 @@ null_inrow_dropped.plot <- le_dropped %>%
 
 options(repr.plot.width = 30, repr.plot.height = 60)
 
-gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot, ncol = 1)
-gridExtra::grid.arrange(null_percentage_dropped.plot, null_inrow_dropped.plot, ncol = 1)
+gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot,null_percentage_dropped.plot, null_inrow_dropped.plot, ncol = 2)
 
 
 ```
 
-There are `r dim(le)[1]` no. of rows in the dataset. According to our Visualization, there seems to be a correlation in the appearance in missing data in our original data's feature "population", "gdp" , "income.composition.of.resources" and "schooling". We would deal with this correlation in missing data by removing the the record that have missing value in all of the listed variables.
+There are `r dim(le)[1]` no. of rows in the dataset. Acording to our Visualization on left, there seems to be a correlation in the appearance in missing data in our orginal data's feature "population", "gdp" , "income.composition.of.resources" and "schooling". We could deal with this correlation in missing data by removing the the record that have missing value in all of the listed variables.
 
-<!-- Check how much records do each country have:  -->
-```{r include=FALSE}
+#Check how much records do each country have:
+```{r}
 le %>% group_by(Country) %>% summarise(COUNT = n())
 le_dropped %>% group_by(Country) %>% summarise(COUNT = n()) #12 country were removed after dropping some common null value (193-181)
 
 #might need to consider not using this variable 
 ```
 
-<!-- ########Since we have a better approach, we might need to remove this############ -->
-<!-- Let's set the threshold of 20% as the max. proportion of null column to be allowed in a data column.  That means, columns with na over 20% will be dropped.  The threshold is then  `r dim(le)[1] * 0.2`.  So, the following 'Population' column will be dropped.  -->
-<!-- ____________________________________________________ -->
 
-<!-- #head(le) -->
-<!-- le <- subset(le,select=-c(Population)) -->
-<!-- # also Population_Scaled -->
-<!-- #le <- subset(le,select=-c(Population_scaled)) -->
+For the other values, we will set the na to the respective column mean for the subsequent analysis.
 
-<!-- ____________________________________________________ -->
-<!-- ################################################################################# -->
-
-For the other values, we would set the na to the respective column mean for the subsequent analysis.
-
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE}
 
 for(i in 1:ncol(le_dropped)) {                                   # Replace NA in all columns
   le_dropped[ , i][is.na(le_dropped[ , i])] <- mean(le_dropped[ , i], na.rm = TRUE)
@@ -204,18 +198,16 @@ for(i in 1:ncol(le_dropped)) {                                   # Replace NA in
 
 ```
 
-#### Conclusion/Key Findings :
+Now, all na have been handled!  Let's continue our analysis.
 
-- na values have been analyzed 
-- Data imputation have been performed as far as possible in order to prepare for the subsequent data analysis.
+
+
 
 ### Overall General Life Expectancy Trend
 
-#### Purpose 
-Do some visualisation to explore and identify the general data pattern, trends and clusters, etc
+Purpose : Do some visualisation to explore and identify the general data pattern, trends and clusters, etc
 
-#### Procedure
-```{r echo=FALSE, fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
 library(ggplot2)
 #install.packages("tidyverse")
 library(tidyverse)
@@ -229,7 +221,14 @@ le_dropped %>%
 
 ```
 
-```{r echo=FALSE, fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+Findings :
+
+- The general life expectancy has been steadily increasing duration the year
+- Average Life expectancy increase from about 67 to 71.5 in 15 years.
+
+
+
+```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
 le_dropped %>%
   group_by(Status) %>%
   summarise(Life.expectancy = mean(Life.expectancy)) %>%
@@ -239,8 +238,11 @@ le_dropped %>%
   geom_bar(stat = "identity")+ scale_fill_manual(values=c('dodgerblue2', 'coral'))
 
 ```
+Finding :
 
-```{r echo=FALSE, fig.height=3, message=FALSE, warning=FALSE}
+- Life expectancy of Developed countries are significantly higher than that of Developing countries.
+
+```{r fig.height=3, message=FALSE, warning=FALSE}
 le_dropped.pivot <- pivot_longer(le_dropped,c(Adult.Mortality,under.five.deaths,infant.deaths),names_to='Mortality.Group',values_to='Mortality.Rate')
 require(gridExtra)
 
@@ -263,39 +265,26 @@ le_dropped.pivot.line <- le_dropped.pivot %>%
 grid.arrange(le_dropped.pivot.area,le_dropped.pivot.line, ncol=2)
 ```
 
-#### Conclusion/Key Findings
+Findings :
 
-- The general life expectancy has been steadily increasing along with the years, from about 67 to the new height of 71.5 in 15 years.
-- Life expectancy of Developed countries are significantly higher than that of Developing countries.
-- The mortality rate of all three age groups are generally decreasing as a whole.
-- The mortality rate of the adult group, however, have fluctuation within the period, compared with the other two groups which show steady decline over the period.
+- The mortality rate of all three age groups are generally decreasing as a whole
+- The mortality rate of the adult group, however, have fluctuation within the period
 
 
-### Variable Selections 
-
-###############################################################################
-######################Variable Selections (BIC backwards):#####################
-###############################################################################
 
 
+###Variable Selections (BIC backwards):
 
 ```{r}
-head(le_dropped)
+#head(le_dropped)
 ```
 ```{r}
-#droped GDP,Population
-#df = subset(le_dropped, select = -c(Country,GDP,Population) )
-df = subset(le_dropped, select = -c(Country) )
-#droped GDP_scaled,Population_scaled
-#df_ns = subset(le_dropped, select =-c(Country,GDP_scaled,Population_scaled) )
-df_ns = subset(le_dropped, select =-c(Country,GDP,Population) )
-head(df)
+df = subset(le_dropped, select = -c(Country,GDP,Population) )
+#head(df)
 ```
 Let's look at the distribution of different columns in the dataset.
 ```{r}
-#install.packages("Hmisc")
-#library(ggplot2)
-#library(tidyr)
+#library(Hmisc)
 #hist.data.frame(df)
 ```
 As we see, the response variable Life Expectancy is normally distributed and so our first try is to see if 
@@ -308,18 +297,43 @@ summary(lmmod)
 ```{r}
 plot(lmmod)
 ```
+Residuals versus Fits plot:
+- The residuals versus fits plot would provide us with information on the residual against the fitted values in regression analysis. This could be used to identify the patterns in the residuals that may indicate the model is not capturing the relationship between our predictor and the outcome variable, therefore, allowing us to detect any non-linearity, unequal error variances and outliers.  In general, we would want to see our residual randomly scattered around 0 since this indicates that the model assumption is met and is a good fit for the data. However, from the above-plotted residuals versus fits plot, we could see there is a curvature shape to our residuals and there is a presence of outliers and high leverage points on the left-hand side of the residuals versus fits the plot, This could be problematic since outliers and leverage points could have a significant impact on the regression coefficient. And the curved shape indicates that our model may be misspecified and further investigation is needed.
 
+QQ plot:
+QQ-plot (Quantile-quantile plot) allow us to investigate the univariate normality of the dataset. If the points on the QQ-plot fall approximately along a straight line, it suggests that the sample comes from a population with similar distribution to the theoretical distribution that we are comparing to. From the QQ-plot that we have plotted above, the point deviates from a straight line, this indicates that our residual distribution is different from our theoretical distribution, where we could identify some outliers on both ends of our QQ-plot. 
+
+####################################Vigi########################################
+
+Standardized Residuals versus Fits plot:
+
+
+Standardized Residuals versus Leverage plot:
+
+################################################################################
+
+
+
+  Since the original model contains 20 dependent variables, this could be a concern since all variables might not be relevant to our response variable and could decrease the precision and increase the complicity/interpretability of the statistical model. Therefore we will perform BIC (Bayesian Information Criterion) variable selection to identify the most relevant variables in the data set. This method could allow us to come up with the simplest model that is still able to explain the data well and performing BIC variable selection could also help us in avoid overfitting, which occurs when a model fits the noise in data rather than the underlying relationships.
 
 ```{r}
 model.step.bic <- step(lmmod,k=log(nrow(df)))
 summary(model.step.bic)
 ```
 
+Initially, all 20 variables were used in our model and achieved an AIC score of 7642.14:
 
-try clustering to understand grouping in data so we can separate may be developing vs
-developed countries
+Life.expectancy ~ Year + Status + Adult.Mortality + infant.deaths + Alcohol + Hepatitis.B + Measles + BMI + under.five.deaths +Polio + Total.expenditure + Diphtheria + HIV.AIDS + thinness..1.19.years + thinness.5.9.years + Income.composition.of.resources + Schooling + Status.val + GDP_scaled + Population_scaled
 
-From below results, we do not see any such cluster to split. 
+After performing BIC backward step model selection method:
+
+Life.expectancy ~ Status + Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + thinness..1.19.years + Income.composition.of.resources + Schooling + GDP_scaled
+
+The BIC backward step model selection method has reduced our model’s independent variable to 13 and achieved a lower AIC score of 7604.34. Since a lower AIC score signifies the regression is a better fit to the data, meaning that after removing some irrelevant variable in our data set, the simple model is still able to explain the data well well and has improved the fitting from the initial model. Also the final reduced model has an Adjusted R-squared score of 0.8296 compared to the original model’s 0.8299 isn’t much of a drop in the Adjusted R-squared score meaning even tho we are using fewer variables in our model, our BIC reduced model was still able to have the same amount of variability being explained by our original model.
+
+
+
+Rather than performing a linear model of our data, we will investigate whether it is possible to group our data into a different groups using clustering methods.
 
 ```{r}
 library(mclust)
@@ -328,27 +342,34 @@ summary(clus)
 
 #No clusters seen in original dataset
 ```
-Variable selection using BIC and VIF, VIF also increases model performance:
 
+From the above results, this data seems not able to be able to separate by clustering.
+
+Now going back to variable selection, this time we will be using VIF(Variance Inflation Factor) to investigate whether it is possible to come up with a better model from BIC reduced model by eliminating some highly correlated variables in the data. 
 ```{r}
 library(car)
 vif(model.step.bic)
 
 #removed one of infant.deaths or under.five.deaths
 ```
+- VIF(Variance Inflation Factor) is a variable selection method that is used to identify and eliminate highly correlated variables in a regression model. If the VIF value for a variable is high, it indicates that the variable is highly correlated with another predictor within the model. From the above output, we could see that variables “infant.deaths” and “under.five.deaths” are highly correlated. Since Multicollinearity can make it difficult to interpret the coefficients of the model and can reduce the overall accuracy of the model. Therefore we will have to remove either “infant.deaths” or “under.five.deaths” to resolve the multicollinearity within our data inorder to improve our model accuracy and interpretability.
+
+
+
+Upon removing the variable 'under.five.deaths’ due to the multicollinearity concern that we have seen from the VIF(Variance Inflation Factor) output is giving a lower model performance, so we will retain it moving forward. Here we update our data to our BIC-selected variable. 
 ```{r}
-#df1<-df[,c('Life.expectancy','Status','Adult.Mortality','infant.deaths','under.five.deaths',
-#      'Hepatitis.B','BMI','Polio','Diphtheria',
-#      'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP_scaled')]
 df1<-df[,c('Life.expectancy','Status','Adult.Mortality','infant.deaths','under.five.deaths',
       'Hepatitis.B','BMI','Polio','Diphtheria',
-      'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP')]
+      'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP_scaled')]
 
 df1$Status <- factor(df1$Status)
 #removed 'under.five.deaths', due to vif - multi collinearity from BIC selection but it decreased model
 #performance so should we retain it?
-head(df1)
+#head(df1)
 ```
+
+After doing variable reduction, Mclust were ablue to group our data using clustering, may be it is because of variable “Status”’s developed vs developing. If so, we need to add that info and build interaction.
+
 ```{r}
 library(mclust)
 clus1 <- Mclust(df1)
@@ -358,6 +379,7 @@ summary(clus1)
 #and build interaction
 ```
 
+Using our reduced model, we feed that data to Linear Model and achieve an Adjusted R-squared of 0.8296 and all variables have a p-value of less the 0.05, meaning that all of our independent variables within the model is statically significant to our dependent variable, In other words, there is strong evidence against the null hypothesis, suggesting that the observed relation between other dependent variable and independent variable is significant and real, not just due to random variation or chance.
 
 ```{r}
 lmmod2 <- lm(Life.expectancy~.,data=df1)
@@ -381,39 +403,6 @@ bic_back <- step(glm_model, k=log(nrow(df)), direction="backward", trace=FALSE)
 summary(bic_back)
 summary(glm_model)
 ```
-
-
-```{r}
-library("glmnet")
-#head(df_ns) #using non-scaled GDP and Population
-df_ns$Status <- as.numeric(as.factor(df_ns$Status)) #Convert Non-Numeric Columns to Numeric for glmnet
-y <- df_ns$Life.expectancy
-x <- as.matrix(df_ns[,c(-1,-3)])
-
-grid <- exp(seq(2, -9, length=100)) 
-
-ladf<- cv.glmnet(x, y, alpha=1, lambda=grid, standardize = TRUE)
-plot(ladf$glmnet.fit, label=TRUE, xvar="lambda")
-plot(ladf)
-
-coef(ladf) #thinness.5.9.years is removed since the coefficients went to 0
-```
-```{r}
-library("glmnet")
-df$Status <- as.numeric(as.factor(df$Status)) #Convert Non-Numeric Columns to Numeric for glmnet
-y <- df$Life.expectancy
-x <- as.matrix(df[,c(-1,-3)])
-grid <- exp(seq(2, -9, length=100)) 
-
-ladf<- cv.glmnet(x, y, alpha=1, lambda=grid, standardize = TRUE)
-
-plot(ladf$glmnet.fit, label=TRUE, xvar="lambda")
-plot(ladf)
-
-coef(ladf)
-```
-
-### PCA
 
 ###############################################################################
 ###############PCA(suggest a simpler scoring system):##########################
@@ -443,11 +432,9 @@ pca_model$rotation[,1:15]
 ###############################################################################
 
 
-#df2 = subset(le_dropped, select = -c(Country,GDP_scaled,Population_scaled) )
-df2 = subset(le_dropped, select = -c(Country,GDP,Population) )
+df2 = subset(le_dropped, select = -c(Country,GDP_scaled,Population_scaled) )
 head(df2)
 
 head(df)
 fa_model <- factanal(df2, factors = 13)
-
 
