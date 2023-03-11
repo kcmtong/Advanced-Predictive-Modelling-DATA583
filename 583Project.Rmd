@@ -66,7 +66,8 @@ le %>% group_by(Country) %>% summarise(COUNT = n())
 ```
 #### Purpose 
 - Investigate the and determine how to handle the null value in the data set.  Missing values could have a large affect to the overall quality of the static models and machine learning models and need to be clean before using it in our training model. 
-#### Procedure
+
+#### Procedure   
 Lets investigate how many missing values within our features.
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
