@@ -14,13 +14,11 @@ geometry: margin=2cm
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Data 583 Life Expectancy - Exploratory Data Analysis
-## Life Expectancy
+## Data 583 Life Expectancy - Exploratory Data Analysis (Life Expectancy Data)
 
 ## Introduction
-We selected "this" dataset and our goal is to understand LE. in this document, we will take a detailed look at different aspects about variables, summary and apply statistical techniques to understand the underlying data more.
-Also, we will come up with next steps of how to fine tune data further and improve modeling
-<<needs fine tuning>>. (Some 4 to 5 lines in total)
+The main goal of assessing the Life expectancy dataset is to understand the variables that impact life expectancy and also to know how well life expectancy is described by the selected variables. In this document, we take a detailed look at different aspects of the data like summary and apply statistical techniques to understand the underlying
+structures. Also, based on the assessments, we will come up with next steps to fine tune data and improve modeling.
 
 ## Data Exploration
 
@@ -32,14 +30,14 @@ Also, we will come up with next steps of how to fine tune data further and impro
 Take a look at the dataset summary.
 ```{r include=FALSE}
 le <- read.csv("dataset/LifeExpectancy.csv")
+
+```
+```{r}
 summary(le)
 ```
-Then look at the dataset dimension.
-```{r include=FALSE}
-dim(le)
-```
 
-Here is another overview :
+Here is another overview that gives information on type of variable, sample data from each column below.
+This also gives number of records and columns which is 2938 and 22 respectively.
 ```{r echo=FALSE}
 str(le)
 ```
@@ -59,7 +57,6 @@ le$Status.val <- ifelse(le$Status == "Developed",1,0)
 # Remove the unreliable column 
 le <- subset(le,select=-c(percentage.expenditure))
 ```
-
 ### Null Value Analysis and Handling
 ```{r include=FALSE}
 library(magrittr) 
@@ -69,7 +66,6 @@ le %>% group_by(Country) %>% summarise(COUNT = n())
 ```
 #### Purpose 
 - Investigate the and determine how to handle the null value in the data set.  Missing values could have a large affect to the overall quality of the static models and machine learning models and need to be clean before using it in our training model. 
-
 #### Procedure
 Lets investigate how many missing values within our features.
 
@@ -84,13 +80,19 @@ missing.values <- le %>%
     summarise(num.missing = n()) %>%
     filter(is.missing==T) %>%
     select(-is.missing) %>%
-    arrange(desc(num.missing)) 
-missing.values
+    arrange(desc(num.missing))
+
 ```
 
-A brief check indicates that there are total of 2563 missing value within our dataset, we could visualize the missing data to identify patterns or cluster of missing values within our data to determine the cause of the missing data and whether it is random or systematic and to highlight potential biases that may exist in our data set. Visualizing the missing value also allow to understand the extend of the missing data and determine appropriate strategies for imputing missing value, since different imputation methods could be more appropriate depending on the pattern of the missing data.
+A brief check indicates that there are total of 2563 missing value within our dataset, we could visualize the missing data to identify patterns or cluster of missing values within our data to determine the cause of the missing data and whether it is random or systematic and to highlight potential biases that may exist in our data set. Visualizing the missing value also allow to understand the extend of the missing data and determine appropriate strategies for imputing missing value. Refer figure in next page, there are `r dim(le)[1]` no. of rows in the dataset. According to our Visualization, there seems to be a correlation in the appearance in missing data in our original data's feature "population", "gdp" , "income.composition.of.resources" and "schooling". We would deal with this correlation in missing data by removing the the record that have missing value in all of the listed variables.
+For the other values, we would set the na to the respective column mean for the subsequent analysis.
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+#### Conclusion/Key Findings :
+
+- na values have been analyzed 
+- Data imputation have been performed as far as possible in order to prepare for the subsequent data analysis.
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 library(ggplot2)
 library(gridExtra)
 missing.values <- le %>%
@@ -134,7 +136,7 @@ missing.values <- le_dropped %>%
   group_by(key,total,isna) %>%
   summarise(num.isna=n()) %>%
   mutate(pct=num.isna/total * 100)
-missing.values
+#missing.values
 levels <- (missing.values%>%filter(isna==T) %>% arrange(desc(pct)))$key
 null_percentage_dropped.plot <- missing.values %>% ggplot() +
         geom_bar(aes(x = reorder(key, desc(pct)), 
@@ -157,12 +159,13 @@ null_inrow_dropped.plot <- le_dropped %>%
     scale_x_discrete(limits = levels) +
     labs(x = "Features", y = "Row Number", title = "Missing values in rows after dropping some common null value records") +
     coord_flip()
-options(repr.plot.width = 30, repr.plot.height = 60)
+
+options(repr.plot.width = 30, repr.plot.height = 30)
 gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot, ncol = 1)
 gridExtra::grid.arrange(null_percentage_dropped.plot, null_inrow_dropped.plot, ncol = 1)
+
 ```
 
-There are `r dim(le)[1]` no. of rows in the dataset. According to our Visualization, there seems to be a correlation in the appearance in missing data in our original data's feature "population", "gdp" , "income.composition.of.resources" and "schooling". We would deal with this correlation in missing data by removing the the record that have missing value in all of the listed variables.
 
 <!-- Check how much records do each country have:  -->
 ```{r message=FALSE, warning=FALSE, include=FALSE}
@@ -183,28 +186,24 @@ le_dropped %>% group_by(Country) %>% summarise(COUNT = n()) #12 country were rem
 <!-- ____________________________________________________ -->
 <!-- ################################################################################# -->
 
-For the other values, we would set the na to the respective column mean for the subsequent analysis.
-
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 for(i in 1:ncol(le_dropped)) {                                   # Replace NA in all columns
   le_dropped[ , i][is.na(le_dropped[ , i])] <- mean(le_dropped[ , i], na.rm = TRUE)
 }
 ```
 
-#### Conclusion/Key Findings :
-
-- na values have been analyzed 
-- Data imputation have been performed as far as possible in order to prepare for the subsequent data analysis.
-
 ## Statistical Analysis
 
-Purpose : Do some visualization to explore and identify the general data pattern, trends and clusters, etc
+#### Purpose
+Do some visualization and initial statistical model assessments to explore and identify the general data pattern, trends and clusters, etc.
+
+#### Procedure
 
 ### General Life Expectancy
 
 As we are interested in Life Expectancy as our response variable, we first start looking at the distribution of the variable and general trend.
 
-```{r echo=FALSE, fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
+```{r echo=FALSE, fig.height=2, fig.width=2, message=FALSE, warning=FALSE}
 library(ggplot2)
 #install.packages("tidyverse")
 library(tidyverse)
@@ -216,16 +215,6 @@ le_dropped %>%
              y=Life.expectancy)) +    
   geom_line()
 
-```
-
-Findings :
-
-- The general life expectancy has been steadily increasing duration the year
-- Average Life expectancy increase from about 67 to 71.5 in 15 years.
-
-
-
-```{r echo=FALSE, fig.height=3, fig.width=3, message=FALSE, warning=FALSE}
 le_dropped %>%
   group_by(Status) %>%
   summarise(Life.expectancy = mean(Life.expectancy)) %>%
@@ -235,11 +224,14 @@ le_dropped %>%
   geom_bar(stat = "identity")+ scale_fill_manual(values=c('dodgerblue2', 'coral'))
 
 ```
-Finding :
 
+#### Conclusion/Key Findings :
+
+- The general life expectancy has been steadily increasing duration the year
+- Average Life expectancy increase from about 67 to 71.5 in 15 years
 - Life expectancy of Developed countries are significantly higher than that of Developing countries.
 
-```{r echo=FALSE, fig.height=3, message=FALSE, warning=FALSE}
+```{r echo=FALSE, fig.height=2, message=FALSE, warning=FALSE}
 le_dropped.pivot <- pivot_longer(le_dropped,c(Adult.Mortality,under.five.deaths,infant.deaths),names_to='Mortality.Group',values_to='Mortality.Rate')
 require(gridExtra)
 
@@ -269,44 +261,46 @@ Findings :
 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-#colnames(df)
-```
-
-#```{r}
-#library(Hmisc)
-#hist.data.frame(df)
-#```
-
-Findings :
-- As we see, the response variable Life Expectancy is normally distributed and so our first try is to see if MLR is able to predict well. 
-- Also, using this model and running a BIC on it, we can understand the columns that are important.
-
-
-
-```{r message=FALSE, warning=FALSE, include=FALSE}
 head(le_dropped)
 ```
-```{r include=FALSE}
+
+```{r include=FALSE, warning=FALSE, include=FALSE}
 
 #df = subset(le_dropped, select = -c(Country,GDP,Population) )
 df = subset(le_dropped, select = -c(Country) )
 #head(df)
 ```
 
+
+For rest of the analysis, we drop the country column so that we can understand general trends in life expectancy
+independent of countries. Let's visualize the distribution of response variable using below histogram.
+```{r message=FALSE, warning=FALSE,echo=FALSE,fig.height=3,fig.width=3}
+library(Hmisc)
+#library(GGally)
+#ggpairs(df)
+df_hist <- df
+colnames(df_hist)[3]<-"LifeExp"
+hist.data.frame(df_hist[3])
+```
+
+Findings :
+- As we see, the response variable Life Expectancy is normally distributed and so our first try is to see if MLR is able to predict well. 
+- Also, using this model and running a BIC on it, we can understand the columns that are important.
+
 ## Predictor Space
 
 We now turn our focus to look at the different predictor variables. Following shows the correlation of different variables and their spread in the dataset.
 
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 
 #install.packages(GGally)
 library(GGally)
-ggcorr(df,palette = "RdBu", size=2,label=TRUE)
+ggcorr(df,palette = "RdBu", size=2,label=TRUE,label_size = 2,hjust = .95,layout.exp=2)
 
 ```
-infant.deaths and under.five.deaths is nearly 100% correlated with each other and Polio is highly correlated with Diphtheria, Income composition of resources is highly correlated with Schooling.
-Other variables are low to moderately correlated.
+
+Summary of correlation for >0.7 or <-0.7: infant.deaths and under.five.deaths is nearly 100% correlated with each other and Polio is highly correlated with Diphtheria, Income composition of resources is highly correlated with Schooling.Both thinness variables are highly correlated. Other variables are low to moderately correlated.
 The response variable Life expectancy is highly correlated with Income composition, Schooling and adult mortality variables.
 
 ### Initial Modelling and Variable Importance:
@@ -315,66 +309,40 @@ As response variable Life.Expectancy is approximately normally distributed, firs
 
 The dataset has 20+ predictors and based on correlation plot there are correlation between the variables, BIC would help to eliminate some of the predictors that are conveying same signal as others and also explains less variability in life expectancy.
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE}
 lmmod <- lm(Life.expectancy~., data = df)
 summary(lmmod)
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE,message=FALSE, warning=FALSE}
+par(mfrow=c(1,2))
 plot(lmmod)
 ```
-Residuals versus Fits plot:
-- The residuals versus fits plot would provide us with information on the residual against the fitted values in regression analysis. This could be used to identify the patterns in the residuals that may indicate the model is not capturing the relationship between our predictor and the outcome variable, therefore, allowing us to detect any non-linearity, unequal error variances and outliers.  In general, we would want to see our residual randomly scattered around 0 since this indicates that the model assumption is met and is a good fit for the data. However, from the above-plotted residuals versus fits plot, we could see there is a curvature shape to our residuals and there is a presence of outliers and high leverage points on the left-hand side of the residuals versus fits the plot, This could be problematic since outliers and leverage points could have a significant impact on the regression coefficient. And the curved shape indicates that our model may be misspecified and further investigation is needed.
 
-QQ plot:
-QQ-plot (Quantile-quantile plot) allow us to investigate the univariate normality of the dataset. If the points on the QQ-plot fall approximately along a straight line, it suggests that the sample comes from a population with similar distribution to the theoretical distribution that we are comparing to. From the QQ-plot that we have plotted above, the point deviates from a straight line, this indicates that our residual distribution is different from our theoretical distribution, where we could identify some outliers on both ends of our QQ-plot. 
+Residuals related plots: The residuals versus fits plot would provide us with information on the residual against the fitted values in regression analysis. This could be used to identify the patterns in the residuals that may indicate the model is not capturing the relationship between our predictor and the outcome variable, therefore, allowing us to detect any non-linearity, unequal error variances and outliers.  In general, we would want to see our residual randomly scattered around 0 since this indicates that the model assumption is met and is a good fit for the data. However, from the above-plotted residuals versus fits plot, we could see there is a curvature shape to our residuals and there is a presence of outliers and high leverage points on the left-hand side of the residuals versus fits the plot, This could be problematic since outliers and leverage points could have a significant impact on the regression coefficient. And the curved shape indicates that our model may be misspecified and further investigation is needed. Also, same is indicated by the scale-location plat with standardized residuals > 1.5. Based on leverage plot, we do not see the need to remove any outliers in this initial assessment. 
 
-####################################Vigi########################################
+QQ plot: QQ-plot (Quantile-quantile plot) allow us to investigate the univariate normality of the dataset. If the points on the QQ-plot fall approximately along a straight line, it suggests that the sample comes from a population with similar distribution to the theoretical distribution that we are comparing to. From the QQ-plot that we have plotted above, the point deviates from a straight line on both ends and indicates there is a heavy tail. 
 
-Standardized Residuals versus Fits plot:
+We make a note of the structures in the initial assessment and acknowledge they could impact the MLR performance. During next stage of the project, we plan to address the issues identified in diagnostics during final modeling.
 
-
-Standardized Residuals versus Leverage plot:
-
-################################################################################
-
-
-
-  Since the original model contains 20 dependent variables, this could be a concern since all variables might not be relevant to our response variable and could decrease the precision and increase the complexity/interpretability of the statistical model. Therefore we will perform BIC (Bayesian Information Criterion) variable selection to identify the most relevant variables in the data set. This method could allow us to come up with the simplest model that is still able to explain the data well and performing BIC variable selection could also help us in avoid overfitting, which occurs when a model fits the noise in data rather than the underlying relationships.
+Variable selection methods: Following is the summary from a couple of common methods used in variable section of models: BIC(Bayesian information criterion, backward selection) and VIF (Variable Inflation Factor).
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 model.step.bic <- step(lmmod,k=log(nrow(df)))
 summary(model.step.bic)
-#summary must be visible in report whereas full model BIC output need not be visible
 ```
 
-Initially, all 20 variables were used in our model and achieved an AIC score of 7642.14:
-
-Life.expectancy ~ Year + Status + Adult.Mortality + infant.deaths + Alcohol + Hepatitis.B + Measles + BMI + under.five.deaths +Polio + Total.expenditure + Diphtheria + HIV.AIDS + thinness..1.19.years + thinness.5.9.years + Income.composition.of.resources + Schooling + Status.val + GDP_scaled + Population_scaled
-
-After performing BIC backward step model selection method:
-
-Life.expectancy ~ Status + Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + thinness..1.19.years + Income.composition.of.resources + Schooling + GDP_scaled
-
-The BIC backward step model selection method has reduced our model’s independent variable to 13 and achieved a lower AIC score of 7604.34. Since a lower AIC score signifies the regression is a better fit to the data, meaning that after removing some irrelevant variable in our data set, the simple model is still able to explain the data well well and has improved the fitting from the initial model. Also the final reduced model has an Adjusted R-squared score of 0.8296 compared to the original model’s 0.8299 isn’t much of a drop in the Adjusted R-squared score meaning even tho we are using fewer variables in our model, our BIC reduced model was still able to have the same amount of variability being explained by our original model.
+Initially, all 20 variables were used in our model and achieved an AIC score of 7642.14. After performing BIC backward step model selection method, The BIC backward step model selection method has reduced our model’s independent variable to 13 and achieved a lower AIC score of 7604.34. Since a lower AIC score signifies the regression is a better fit to the data, meaning that after removing some irrelevant variable in our data set, the simple model is still able to explain the data well well and has improved the fitting from the initial model. Also the final reduced model has an Adjusted R-squared score of 0.8296 compared to the original model’s 0.8299 isn’t much of a drop in the Adjusted R-squared score meaning our BIC reduced model was still able to have the same amount of variability.
 
 Now going back to variable selection, this time we will be using VIF(Variance Inflation Factor) to investigate whether it is possible to come up with a better model from BIC reduced model by eliminating some highly correlated variables in the data. 
+
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 library(car)
 vif(model.step.bic)
 
 #removed one of infant.deaths or under.five.deaths
 ```
-- VIF(Variance Inflation Factor) is a variable selection method that is used to identify and eliminate highly correlated variables in a regression model. If the VIF value for a variable is high, it indicates that the variable is highly correlated with another predictor within the model. From the above output, we could see that variables “infant.deaths” and “under.five.deaths” are highly correlated. Since Multicollinearity can make it difficult to interpret the coefficients of the model and can reduce the overall accuracy of the model. Therefore we will have to remove either “infant.deaths” or “under.five.deaths” to resolve the multicollinearity within our data inorder to improve our model accuracy and interpretability.
-
-
-
-Upon removing the variable 'under.five.deaths’ due to the multicollinearity concern that we have seen from the VIF(Variance Inflation Factor) output is giving a lower model performance, so we will retain it moving forward. Here we update our data to our BIC-selected variable.
-
-```{r message=FALSE, warning=FALSE, include=FALSE}
-colnames(df)
-```
-
+VIF(Variance Inflation Factor) is a variable selection method that is used to identify and eliminate highly correlated variables in a regression model. If the VIF value for a variable is high, it indicates that the variable is highly correlated with another predictor within the model. From the above output, we could see that variables “infant.deaths” and “under.five.deaths” are highly correlated. Therefore we will have to remove either “infant.deaths” or “under.five.deaths” to resolve the multicollinearity within our data inorder to improve our model accuracy and interpretability. We acknowledge this may be necessary for next level of tuning the model.
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 df1<-df[,c('Life.expectancy','Status','Adult.Mortality','infant.deaths','under.five.deaths',
       'Hepatitis.B','BMI','Polio','Diphtheria',
@@ -386,17 +354,14 @@ df1$Status <- factor(df1$Status)
 #head(df1)
 ```
 
-After doing variable reduction, checking for any clustering effects in data. 
+After doing variable reduction and selecting only variables that are recommended by BIC (Status + Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling), we move on checking for any clustering effects in data. 
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE}
 library(mclust)
 clus1 <- Mclust(df1)
 summary(clus1)
-
-#looks like it is finding some clusters, may be developed vs developing? If so, we need to add that info 
-#and build interaction
 ```
-Looks like there are some clusters in the data, it could be it is because of variable “Status”’s developed vs developing. Acknowledging this information which may be helpful in future phases of model building and fine tuning. For example, if MLR would be the final model, building interaction with cluster variable and rest of data would further improve model performance.
+Looks like there are some clusters in the data, first understanding is it is because of variable “Status”’s developed vs developing. Acknowledging this information which may be helpful in future phases of model building and fine tuning. For example, if MLR would be the final model, building interaction with cluster variable and rest of data would further improve model performance.
 
 Using our reduced model, we feed that data to Linear Model and achieve an Adjusted R-squared of 0.8296 and all variables have a p-value of less the 0.05, meaning that all of our independent variables within the model is statically significant to our dependent variable, In other words, there is strong evidence against the null hypothesis, suggesting that the observed relation between other dependent variable and independent variable is significant and real, not just due to random variation or chance.
 
@@ -405,8 +370,11 @@ lmmod2 <- lm(Life.expectancy~.,data=df1)
 summary(lmmod2)
 vif(lmmod2)
 ```
-### Key Findings
+
+### Conclusion/Key Findings
+
 Summarized below are some key findings from EDA.
+
 - Response variable is looking to be normally distributed and initial model score is ~82% which means this model is able to explain 82% of variation in Life expectancy. Its possible to use multiple linear regression for this data. From the diagnostic plots it may be seen that there is skewness in the data.
 - There are some variables that suffer multi collinearity (from VIF) scores.
 - Not all predictors are necessary to describe response variable. Model selection will be helpful.
@@ -423,14 +391,16 @@ Due to the spread of data (clustering, non-linearity of predictors w response va
 3. Is Multi linear regression the best model or go with other non parametric models? From initial feedback, there are hypotheses tests available to validate this.
 
 Need to explore further on these questions from proposal stage and conclude.
+
 4. Understanding impact of individually controlled factors - The dataset has all predicting variables divided into 4 groups: Immunization related factors, Mortality factors, Economical factors and Social factors. Some of these factors are controllable by individuals like immunization, alcohol etc. Some of these factors are noncontrollable and macro elements like GDP. If an individual within a country want to improve life expectancy, how much is controllable/can be influenced personally? What proportion of variation in life expectancy can be explained by these variables? For example, What is the effect of “Alcohol/BMI” on the life expectancy?
 
 5. Understanding impact of Government/Public controlled factors - From Government perspective, how are the preventive measures influencing life expectancy? What proportion of variation in life expectancy can be explained by these variables? For example, Does Higher health expenditure (column H) on Health improve life expectancy?
 
-## Extra - add if there is page available
 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
+## Extra - add if there is page available
+
 #str(le)
 class(df$Country)
 glm_model <- glm(Life.expectancy~., data = df, family = "gaussian")
@@ -439,12 +409,12 @@ summary(bic_back)
 summary(glm_model)
 ```
 
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
 ###############################################################################
 ###############PCA(suggest a simpler scoring system):##########################
 ###############################################################################
-
-```{r message=FALSE, warning=FALSE, include=FALSE}
-
 #head(df[,-3])
 head(df[,c(-1,-3)])
 df$Status <- as.numeric(as.factor(df$Status)) #Convert Non-Numeric Columns to Numeric for PCA
@@ -461,15 +431,18 @@ plot(pca_model, type="lines")
 #Use Standard deviation instead to decide how many PC to keep, if it is below 1 we toss it out since it does not explain much info about our data.it is suggest us to keep 15 PC.
 
 pca_model$rotation[,1:15]
-```
+
 ###############################################################################
 #########################################FA:(not working)###################################
 ###############################################################################
 
 
-df2 = subset(le_dropped, select = -c(Country,GDP_scaled,Population_scaled) )
+df2 = subset(le_dropped, select = -c(Country) )
 head(df2)
 
+#Need to eliminate non numeric variables before running factor analysis below
 head(df)
-fa_model <- factanal(df2, factors = 13)
+#fa_model <- factanal(df2, factors = 13)
+```
+
 
