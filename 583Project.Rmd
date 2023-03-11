@@ -88,7 +88,6 @@ A brief check indicates that there are total of 2563 missing value within our da
 For the other values, we would set the na to the respective column mean for the subsequent analysis.
 
 #### Conclusion/Key Findings :
-
 - na values have been analyzed 
 - Data imputation have been performed as far as possible in order to prepare for the subsequent data analysis.
 
@@ -198,7 +197,6 @@ for(i in 1:ncol(le_dropped)) {                                   # Replace NA in
 Do some visualization and initial statistical model assessments to explore and identify the general data pattern, trends and clusters, etc.
 
 #### Procedure
-
 ### General Life Expectancy
 
 As we are interested in Life Expectancy as our response variable, we first start looking at the distribution of the variable and general trend.
@@ -226,7 +224,6 @@ le_dropped %>%
 ```
 
 #### Conclusion/Key Findings :
-
 - The general life expectancy has been steadily increasing duration the year
 - Average Life expectancy increase from about 67 to 71.5 in 15 years
 - Life expectancy of Developed countries are significantly higher than that of Developing countries.
@@ -288,9 +285,7 @@ Findings :
 - Also, using this model and running a BIC on it, we can understand the columns that are important.
 
 ## Predictor Space
-
 We now turn our focus to look at the different predictor variables. Following shows the correlation of different variables and their spread in the dataset.
-
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE}
 
@@ -304,18 +299,18 @@ Summary of correlation for >0.7 or <-0.7: infant.deaths and under.five.deaths is
 The response variable Life expectancy is highly correlated with Income composition, Schooling and adult mortality variables.
 
 ### Initial Modelling and Variable Importance:
-
 As response variable Life.Expectancy is approximately normally distributed, first step is to try lm model for this data and also run BIC to get the variable selection from the dataset.
 
 The dataset has 20+ predictors and based on correlation plot there are correlation between the variables, BIC would help to eliminate some of the predictors that are conveying same signal as others and also explains less variability in life expectancy.
 
-```{r message=FALSE, warning=FALSE}
+#### Full model summary and diagnostics
+```{r message=FALSE, warning=FALSE,echo=FALSE}
 lmmod <- lm(Life.expectancy~., data = df)
 summary(lmmod)
 ```
 
 ```{r echo=FALSE,message=FALSE, warning=FALSE}
-par(mfrow=c(1,2))
+par(mfrow=c(1,2),heights=c(1,1,1,1))
 plot(lmmod)
 ```
 
@@ -325,13 +320,13 @@ QQ plot: QQ-plot (Quantile-quantile plot) allow us to investigate the univariate
 
 We make a note of the structures in the initial assessment and acknowledge they could impact the MLR performance. During next stage of the project, we plan to address the issues identified in diagnostics during final modeling.
 
-Variable selection methods: Following is the summary from a couple of common methods used in variable section of models: BIC(Bayesian information criterion, backward selection) and VIF (Variable Inflation Factor).
+#### Variable selection methods
+Following is the summary from a couple of common methods used in variable section of models: BIC(Bayesian information criterion, backward selection) and VIF (Variable Inflation Factor).
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 model.step.bic <- step(lmmod,k=log(nrow(df)))
 summary(model.step.bic)
 ```
-
 Initially, all 20 variables were used in our model and achieved an AIC score of 7642.14. After performing BIC backward step model selection method, The BIC backward step model selection method has reduced our model’s independent variable to 13 and achieved a lower AIC score of 7604.34. Since a lower AIC score signifies the regression is a better fit to the data, meaning that after removing some irrelevant variable in our data set, the simple model is still able to explain the data well well and has improved the fitting from the initial model. Also the final reduced model has an Adjusted R-squared score of 0.8296 compared to the original model’s 0.8299 isn’t much of a drop in the Adjusted R-squared score meaning our BIC reduced model was still able to have the same amount of variability.
 
 Now going back to variable selection, this time we will be using VIF(Variance Inflation Factor) to investigate whether it is possible to come up with a better model from BIC reduced model by eliminating some highly correlated variables in the data. 
@@ -361,6 +356,7 @@ library(mclust)
 clus1 <- Mclust(df1)
 summary(clus1)
 ```
+#### Clustering
 Looks like there are some clusters in the data, first understanding is it is because of variable “Status”’s developed vs developing. Acknowledging this information which may be helpful in future phases of model building and fine tuning. For example, if MLR would be the final model, building interaction with cluster variable and rest of data would further improve model performance.
 
 Using our reduced model, we feed that data to Linear Model and achieve an Adjusted R-squared of 0.8296 and all variables have a p-value of less the 0.05, meaning that all of our independent variables within the model is statically significant to our dependent variable, In other words, there is strong evidence against the null hypothesis, suggesting that the observed relation between other dependent variable and independent variable is significant and real, not just due to random variation or chance.
@@ -370,9 +366,7 @@ lmmod2 <- lm(Life.expectancy~.,data=df1)
 summary(lmmod2)
 vif(lmmod2)
 ```
-
 ### Conclusion/Key Findings
-
 Summarized below are some key findings from EDA.
 
 - Response variable is looking to be normally distributed and initial model score is ~82% which means this model is able to explain 82% of variation in Life expectancy. Its possible to use multiple linear regression for this data. From the diagnostic plots it may be seen that there is skewness in the data.
@@ -383,7 +377,6 @@ Due to the spread of data (clustering, non-linearity of predictors w response va
 
 
 ## Questions and Next Steps
-
 1. Does the variables selected using BIC and linear model able to explain Life Expectancy adequately? A hypotheses test is required for this.
 
 2. Is the response variable normally distributed? Shapiro-Wilk test for normality will need to be conducted for this.
