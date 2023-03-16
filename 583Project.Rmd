@@ -273,12 +273,12 @@ df = subset(le_dropped, select = -c(Country) )
 For rest of the analysis, we drop the country column so that we can understand general trends in life expectancy
 independent of countries. Let's visualize the distribution of response variable using below histogram.
 ```{r message=FALSE, warning=FALSE,echo=FALSE,fig.height=3,fig.width=3}
-library(Hmisc)
+#library(Hmisc)
 #library(GGally)
 #ggpairs(df)
-df_hist <- df
-colnames(df_hist)[3]<-"LifeExp"
-hist.data.frame(df_hist[3])
+#df_hist <- df
+#colnames(df_hist)[3]<-"LifeExp"
+#hist.data.frame(df_hist[3])
 ```
 
 Findings :
