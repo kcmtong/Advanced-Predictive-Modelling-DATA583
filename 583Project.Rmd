@@ -440,3 +440,86 @@ head(df)
 ```
 
 
+
+1. normal distribution test for our y variable 
+
+```{r}
+#Histogram & QQPlot
+par(mfrow=c(1,2)) 
+hist(df$Life.expectancy, col='steelblue', main='Life.expectancy_Histogram')
+#not really a good "bell-shape"
+qqnorm(df$Life.expectancy, main='Life.expectancy_QQplot')
+#most of the data is not fall along a straight diagonal line 
+qqline(df$Life.expectancy)
+
+#Both are indicating that our predict variable Y "df$Life.expectancy" is not normally distributed 
+```
+
+```{r}
+#Shapiro-Wilk Test
+
+shapiro.test(df$Life.expectancy)
+
+#Finding: Since df$Life.expectancy p-value is less than .05, indicate that our y variable is not normally distributed!!!
+```
+
+
+```{r}
+#Kolmogorov-Smirnov Test 
+
+ks.test(df$Life.expectancy, 'pnorm')
+
+#Finding: Since df$Life.expectancy p-value is less than .05, indicate that our y variable is not normally distributed!!!
+```
+
+2. npreg on our dataset? 
+```{r cache=TRUE}
+library(np)
+n <- names(df)
+f <- as.formula(paste("df$Life.expectancy ~", paste(n[!n %in% "Life.expectancy"], collapse = " + ")))
+
+model_np <- npregbw(Life.expectancy ~ Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling, data = df, regtype="ll", bwmethod = "cv.aic")
+
+# model_np <- npregbw(Life.expectancy ~ Status + Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling, data = df, regtype="ll", bwmethod = "cv.aic")
+model_np <- npreg(bws = model_np)
+summary(model_np)
+```
+```{r}
+objects()
+find("model_np")
+
+saveRDS(model_np,"model_np.rds")
+my_model <- readRDS("model_np.rds")
+
+summary(my_model)
+```
+
+```{r cache=TRUE}
+npsigtest_npreg <- npsigtest(model_np)
+```
+
+3. need to pull the LASSO code  into our final report
+
+```{r}
+library(glmnet)
+y <- df$Life.expectancy
+x <- data.matrix(df[, c('Year','Adult.Mortality','infant.deaths','Alcohol','Hepatitis.B','Measles','BMI','under.five.deaths','Polio','Total.expenditure','Diphtheria','HIV.AIDS','GDP','Population','thinness..1.19.years','thinness.5.9.years','Income.composition.of.resources','Schooling','Status.val')])
+#k-fold cross-validation to find optimal lambda value\
+cv_model <- cv.glmnet(x, y, alpha = 1)
+
+#optimal lambda value that minimizes test MSE
+best_lambda <- cv_model$lambda.min
+best_lambda
+plot(cv_model) 
+
+#coefficients of best model
+best_model <- glmnet(x, y, alpha = 1, lambda = best_lambda)
+coef(best_model)
+```
+
+
+
+
+
+
+
