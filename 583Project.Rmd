@@ -498,13 +498,43 @@ summary(my_model)
 npsigtest_npreg <- npsigtest(model_np)
 ```
 
-3. need to pull the LASSO code  into our final report
+3. LASSO and Neuralnet
+Two different supervised algorithms tried on the dataset. They do not have the constraint of a normal distribution for response variable.
+
+First did a train and test split so we can measure the MSE and compare how each of the models are performing interms of minimizing MSE.
 
 ```{r}
 library(glmnet)
-y <- df$Life.expectancy
-x <- data.matrix(df[, c('Year','Adult.Mortality','infant.deaths','Alcohol','Hepatitis.B','Measles','BMI','under.five.deaths','Polio','Total.expenditure','Diphtheria','HIV.AIDS','GDP','Population','thinness..1.19.years','thinness.5.9.years','Income.composition.of.resources','Schooling','Status.val')])
+#70:30 split for train and test
+
+df1<-df[,c('Life.expectancy','Adult.Mortality','infant.deaths','under.five.deaths',
+      'Hepatitis.B','BMI','Polio','Diphtheria',
+      'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP','Status.val')]
+
+ind <- sample(1:nrow(df1), 2000)
+traino <- df1[ind,]
+testo <- df1[-ind,]
+```
+
+
+Linear model
+```{r}
+lmmodtr <- lm(traino[,1]~.,data=traino[,-1])
+summary(lmmodtr)
+
+```
+Another test to see if the above parametric model specification is correct.
+```{r}
+library(lmtest)
+resettest(lmmodtr)
+```
+```{r}
+#LASSO
+library(glmnet)
+y <- traino$Life.expectancy
+x <- data.matrix(traino[,-1])
 #k-fold cross-validation to find optimal lambda value\
+#cv default is 10 fold
 cv_model <- cv.glmnet(x, y, alpha = 1)
 
 #optimal lambda value that minimizes test MSE
@@ -513,13 +543,37 @@ best_lambda
 plot(cv_model) 
 
 #coefficients of best model
-best_model <- glmnet(x, y, alpha = 1, lambda = best_lambda)
-coef(best_model)
+lasmod <- glmnet(as.matrix(traino[,-1]),traino$Life.expectancy, alpha = 1, lambda = best_lambda)
+coef(lasmod)
 ```
+```{r}
+#linear model
+mselm_te1 <- mean((testo[,1]-predict(lmmodtr, newdata=testo))^2)
 
+#lasso
+mselas_te1 <- mean((testo[,1]-predict(lasmod, newx=as.matrix(testo[,-1])))^2)
+print(mselm_te1)
+print(mselas_te1)
+#MSE comparison
 
+```
+```{r}
+library(nnet)
+#18 MSE
+for(i in 1:62){
+  
+  set.seed(4521)
+  
+  train_lin <- nnet(traino[,1]~., data=traino, size=i, linout=TRUE, trace=FALSE)
+#calculating mse
 
-
-
-
+  mse_nnet_lin <- mean((testo[,1]-(predict(train_lin, newdata=testo)))^2)
+  print(paste("Number of hidden layer variables:", i))
+  print(paste("MSE:",mse_nnet_lin))
+  
+}
+```
+##Pending
+1. np specification test
+2. Visualizing bimodal distribution of y
 
