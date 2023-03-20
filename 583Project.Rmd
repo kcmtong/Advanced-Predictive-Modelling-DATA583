@@ -471,32 +471,42 @@ ks.test(df$Life.expectancy, 'pnorm')
 
 #Finding: Since df$Life.expectancy p-value is less than .05, indicate that our y variable is not normally distributed!!!
 ```
+########################################
+LM with matching dependent variable with npreg
+```{r}
 
-2. npreg on our dataset? 
+model_lm <- lm(Life.expectancy~Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling, data = df, x=TRUE, y=TRUE)
+summary(model_lm)
+```
+########################################
+
+2. npreg on our dataset?  
+
+Note: When have time need to rerun with "x=True, y=True", "VIF remove", "add status.val", "train split"
 ```{r cache=TRUE}
 library(np)
-n <- names(df)
-f <- as.formula(paste("df$Life.expectancy ~", paste(n[!n %in% "Life.expectancy"], collapse = " + ")))
+# n <- names(df)
+# f <- as.formula(paste("df$Life.expectancy ~", paste(n[!n %in% "Life.expectancy"], collapse = " + ")))
+# 
+# model_np <- npregbw(Life.expectancy ~ Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling, data = df, regtype="ll", bwmethod = "cv.aic")    #19 HRs to run...
 
-model_np <- npregbw(Life.expectancy ~ Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling, data = df, regtype="ll", bwmethod = "cv.aic")
-
-# model_np <- npregbw(Life.expectancy ~ Status + Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling, data = df, regtype="ll", bwmethod = "cv.aic")
-model_np <- npreg(bws = model_np)
+# model_np <- npreg(bws = model_np)
+# summary(model_np)
+model_np <- readRDS("model_np.rds") #PreTrained Model
 summary(model_np)
 ```
 ```{r}
-objects()
-find("model_np")
+# objects()
+# find("model_np")
+# 
+# saveRDS(model_np,"model_np.rds")
 
-saveRDS(model_np,"model_np.rds")
-my_model <- readRDS("model_np.rds")
-
-summary(my_model)
 ```
 
 ```{r cache=TRUE}
-npsigtest_npreg <- npsigtest(model_np)
+#npsigtest_npreg <- npsigtest(model_np)    #10 HRs to run...
 ```
+![npsigtest_npreg result](dataset/npsigtest_npreg.png)
 
 3. LASSO and Neuralnet
 Two different supervised algorithms tried on the dataset. They do not have the constraint of a normal distribution for response variable.
@@ -519,7 +529,7 @@ testo <- df1[-ind,]
 
 Linear model
 ```{r}
-lmmodtr <- lm(traino[,1]~.,data=traino[,-1])
+lmmodtr <- lm(traino[,1]~.,data=traino[,-1],x=TRUE, y=TRUE)
 summary(lmmodtr)
 
 ```
@@ -573,7 +583,33 @@ for(i in 1:62){
   
 }
 ```
+
 ##Pending
 1. np specification test
-2. Visualizing bimodal distribution of y
+```{r cache=TRUE}
+# X <- data.frame(df$Adult.Mortality,df$infant.deaths,df$Hepatitis.B,df$BMI,df$under.five.deaths,df$Polio,df$Diphtheria,df$HIV.AIDS,df$GDP,df$thinness..1.19.years,df$Income.composition.of.resources,df$Schooling)
+# 
+# result_npcms <- npcmstest(model=model_lm, xdat=X, ydat=df$Life.expectancy) #33Hours to run
+```
+```{r}
+# result_npcms
 
+# objects()
+# find("result_npcms")
+# 
+# saveRDS(result_npcms,"result_npcms.rds")
+result_npcms <- readRDS("result_npcms.rds") #PreTrained Model
+summary(result_npcms)
+```
+2. Visualizing bimodal distribution of yS
+```{r}
+#Histogram & QQPlot
+par(mfrow=c(1,2)) 
+hist(df$Life.expectancy, col='steelblue', main='Life.expectancy_Histogram',breaks = 35)
+#not really a good "bell-shape"
+qqnorm(df$Life.expectancy, main='Life.expectancy_QQplot')
+S#most of the data is not fall along a straight diagonal line 
+qqline(df$Life.expectancy)
+
+#Both are indicating that our predict variable Y "df$Life.expectancy" is not normally distributed 
+```
