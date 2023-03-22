@@ -14,14 +14,14 @@ geometry: margin=2cm
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Data 583 Life Expectancy - Final Report (Life Expectancy Data)
+# Data 583 Life Expectancy - Final Report (Life Expectancy Data)
 
-## Introduction and Hypotheses
+## Part 1. Introduction and Hypotheses
 Life Expectancy has always been an area of interest for humanity.  The dataset contains the Life Expectancy records of 193 countries between 2000-2015, together with different predictive factors. Broadly speaking, predicting variables are categorized into 4 major areas : Immmunization, Mortality, Economical, and Social, containing a total of 21 individual variables.
 
 The primary purpose of this report is to compare and evaluate different predictive models in order to identify the most appropriate model for the dataset.  In particular, we will evaluate the applicability of the core assumptions of the selected models by methods such as Normality Test, Multicollinearity Assessment, etc. This could validate or decline the adoption of certain models because the model assumptions are simply not satisfied.  We are also going to verify whether the 4 predicting areas have equal significance on Life Expectancy, and whether there are adequate support evidence suggesting a strong correlation with the response variables.  Finally, we will also perform and compare fitting result of selected models, in particular whether parametric models would be more suitable than non-parametric models for this dataset. 
 
-## Dataset overview
+## Part 2. Dataset overview
 
 ### Varaibles Types
 |Variable     |Unit of Measurement/Data Category    | Continuous vs Discrete |
@@ -165,9 +165,9 @@ null_inrow_dropped.plot <- le_dropped %>%
     labs(x = "Features", y = "Row Number", title = "Missing values in rows after dropping some common null value records") +
     coord_flip()
 
-options(repr.plot.width = 30, repr.plot.height = 30)
-gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot, ncol = 1)
-gridExtra::grid.arrange(null_percentage_dropped.plot, null_inrow_dropped.plot, ncol = 1)
+#options(repr.plot.width = 30, repr.plot.height = 30)
+#gridExtra::grid.arrange(null_percentage.plot, null_inrow.plot, ncol = 1)
+#gridExtra::grid.arrange(null_percentage_dropped.plot, null_inrow_dropped.plot, ncol = 1)
 
 ```
 
@@ -186,17 +186,8 @@ for(i in 1:ncol(le_dropped)) {                                   # Replace NA in
 }
 ```
 
-## Statistical Analysis
 
-#### Purpose
-Do some visualization and initial statistical model assessments to explore and identify the general data pattern, trends and clusters, etc.
-
-#### Procedure
-### General Life Expectancy
-
-As we are interested in Life Expectancy as our response variable, we first start looking at the distribution of the variable and general trend.
-
-```{r echo=FALSE, fig.height=2, fig.width=2, message=FALSE, warning=FALSE}
+```{r eval=FALSE, fig.height=2, fig.width=2, message=FALSE, warning=FALSE, include=FALSE}
 library(ggplot2)
 #install.packages("tidyverse")
 library(tidyverse)
@@ -218,12 +209,8 @@ le_dropped %>%
 
 ```
 
-#### Conclusion/Key Findings :
-- The general life expectancy has been steadily increasing duration the year
-- Average Life expectancy increase from about 67 to 71.5 in 15 years
-- Life expectancy of Developed countries are significantly higher than that of Developing countries.
 
-```{r echo=FALSE, fig.height=2, message=FALSE, warning=FALSE}
+```{r eval=FALSE, fig.height=2, message=FALSE, warning=FALSE, include=FALSE}
 le_dropped.pivot <- pivot_longer(le_dropped,c(Adult.Mortality,under.five.deaths,infant.deaths),names_to='Mortality.Group',values_to='Mortality.Rate')
 require(gridExtra)
 
@@ -246,13 +233,8 @@ le_dropped.pivot.line <- le_dropped.pivot %>%
 grid.arrange(le_dropped.pivot.area,le_dropped.pivot.line, ncol=2)
 ```
 
-Findings :
 
-- The mortality rate of all three age groups are generally decreasing as a whole
-- The mortality rate of the adult group, however, have fluctuation within the period
-
-
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 head(le_dropped)
 ```
 
@@ -264,9 +246,8 @@ df = subset(le_dropped, select = -c(Country) )
 ```
 
 
-For rest of the analysis, we drop the country column so that we can understand general trends in life expectancy
-independent of countries. Let's visualize the distribution of response variable using below histogram.
-```{r message=FALSE, warning=FALSE,echo=FALSE,fig.height=3,fig.width=3}
+
+```{r eval=FALSE, fig.height=3, fig.width=3, message=FALSE, warning=FALSE, include=FALSE}
 #library(Hmisc)
 #library(GGally)
 #ggpairs(df)
@@ -275,12 +256,6 @@ independent of countries. Let's visualize the distribution of response variable 
 #hist.data.frame(df_hist[3])
 ```
 
-Findings :
-- As we see, the response variable Life Expectancy is normally distributed and so our first try is to see if MLR is able to predict well. 
-- Also, using this model and running a BIC on it, we can understand the columns that are important.
-
-## Predictor Space
-We now turn our focus to look at the different predictor variables. Following shows the correlation of different variables and their spread in the dataset.
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE}
 
@@ -290,8 +265,11 @@ ggcorr(df,palette = "RdBu", size=2,label=TRUE,label_size = 2,hjust = .95,layout.
 
 ```
 
-Summary of correlation for >0.7 or <-0.7: infant.deaths and under.five.deaths is nearly 100% correlated with each other and Polio is highly correlated with Diphtheria, Income composition of resources is highly correlated with Schooling.Both thinness variables are highly correlated. Other variables are low to moderately correlated.
-The response variable Life expectancy is highly correlated with Income composition, Schooling and adult mortality variables.
+
+## Part 3. Regression Analysis
+
+
+### PLEASE FEEL FREE TO MODIFY/RESTRUCTURE THE FOLLOWING SECTIONS ACCORDING TO THE FINAL REPORT 
 
 ### Initial Modelling and Variable Importance:
 As response variable Life.Expectancy is approximately normally distributed, first step is to try lm model for this data and also run BIC to get the variable selection from the dataset.
