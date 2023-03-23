@@ -59,7 +59,7 @@ As Multicollinearity can potentially affect the accuracy of regression model and
 
 
 
-```{r include=FALSE}
+```{r, include=FALSE}
 ### Start of EDA section - retained in Rmd
 
 le <- read.csv("dataset/LifeExpectancy.csv")
@@ -73,7 +73,7 @@ le$Status.val <- ifelse(le$Status == "Developed",1,0)
 le <- subset(le,select=-c(percentage.expenditure))
 ```
 
-```{r include=FALSE}
+```{r, include=FALSE}
 # Null Data Handling
 library(magrittr) 
 library(dplyr)  
@@ -189,7 +189,7 @@ for(i in 1:ncol(le_dropped)) {                                   # Replace NA in
 ```
 
 
-```{r eval=FALSE, fig.height=2, fig.width=2, message=FALSE, warning=FALSE, include=FALSE}
+```{r, eval=FALSE, fig.height=2, fig.width=2, message=FALSE, warning=FALSE, include=FALSE}
 library(ggplot2)
 #install.packages("tidyverse")
 library(tidyverse)
@@ -212,7 +212,7 @@ le_dropped %>%
 ```
 
 
-```{r eval=FALSE, fig.height=2, message=FALSE, warning=FALSE, include=FALSE}
+```{r, eval=FALSE, fig.height=2, message=FALSE, warning=FALSE, include=FALSE}
 le_dropped.pivot <- pivot_longer(le_dropped,c(Adult.Mortality,under.five.deaths,infant.deaths),names_to='Mortality.Group',values_to='Mortality.Rate')
 require(gridExtra)
 
@@ -236,7 +236,7 @@ grid.arrange(le_dropped.pivot.area,le_dropped.pivot.line, ncol=2)
 ```
 
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 head(le_dropped)
 ```
 
@@ -281,7 +281,7 @@ summary(model.step.bic)
 ```
 
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 library(car)
 vif(model.step.bic)
 
@@ -302,7 +302,7 @@ df1<-df[,c('Life.expectancy','Adult.Mortality','infant.deaths','under.five.death
 
 
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 #not carrying forward any clustering analysis for the first release of the report due to time
 #constraints
 library(mclust)
@@ -311,19 +311,16 @@ summary(clus1)
 ```
 We eliminate the Status variable from the selected list of variables in the reduced model as this is a factor variable with two statuses and not continuous. We first study the effect of the model without this variable. 
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 library(car)
 lmmod2 <- lm(Life.expectancy~.,data=df1)
 summary(lmmod2)
 vif(lmmod2)
 
 ### End of EDA
-```
-
-
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 ### Start of model building and assessments
 ```
+
 
 ## Part 3. Regression Analysis
 
@@ -332,7 +329,7 @@ vif(lmmod2)
 
 The initial model shows that we are able to explain approximately 82% of variability of our response variable using the selected predictor variables. The next step is to look at the error diagnostics from the model.
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 par(mfrow=c(1,2),heights=c(1,1,1,1))
 plot(lmmod2)
 ```
@@ -371,12 +368,12 @@ shapiro.test(df$Life.expectancy)
 Another test to see if the above parametric model specification is correct.
 ```{r}
 library(lmtest)
-resettest(lmmodtr)
+resettest(lmmod2)
 ```
 
 #### d. np specification test
 
-```{r r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 #LM with matching dependent variable with npreg
 model_lm <- lm(Life.expectancy~Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling, data = df, x=TRUE, y=TRUE)
 summary(model_lm)
@@ -415,7 +412,7 @@ Two different supervised algorithms tried on the dataset. They do not have the c
 
 First did a train and test split so we can measure the MSE and compare how each of the models are performing in terms of minimizing MSE.
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(glmnet)
 # approximately 70:30 split for train and test
 
@@ -430,14 +427,14 @@ testo <- df1[-ind,]
 
 
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 #linear model for comparison
 lmmodtr <- lm(traino[,1]~.,data=traino[,-1],x=TRUE, y=TRUE)
 summary(lmmodtr)
 
 ```
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 #LASSO
 library(glmnet)
 y <- traino$Life.expectancy
@@ -456,7 +453,7 @@ lasmod <- glmnet(as.matrix(traino[,-1]),traino$Life.expectancy, alpha = 1, lambd
 coef(lasmod)
 ```
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 #linear model
 mselm_te1 <- mean((testo[,1]-predict(lmmodtr, newdata=testo))^2)
 
@@ -465,7 +462,7 @@ mselas_te1 <- mean((testo[,1]-predict(lasmod, newx=as.matrix(testo[,-1])))^2)
 
 ```
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(nnet)
 #18 MSE
 hidden <- 0
