@@ -1,0 +1,89 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+deleted code
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+## Extra - add if there is page available
+
+#str(le)
+class(df$Country)
+glm_model <- glm(Life.expectancy~., data = df, family = "gaussian")
+bic_back <- step(glm_model, k=log(nrow(df)), direction="backward", trace=FALSE)
+summary(bic_back)
+summary(glm_model)
+```
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+###############################################################################
+###############PCA(suggest a simpler scoring system):##########################
+###############################################################################
+#head(df[,-3])
+head(df[,c(-1,-3)])
+df$Status <- as.numeric(as.factor(df$Status)) #Convert Non-Numeric Columns to Numeric for PCA
+pca_model <- prcomp(df[,c(-1,-3)],scale.=TRUE)
+summary(pca_model)
+
+```
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#Use Sceen Plot to decide how many PC to keep, But there seems to be a large value in our PC1 Standard Deviation so it isn't a clear indicator.
+
+plot(pca_model, type="lines")
+```
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#Use Standard deviation instead to decide how many PC to keep, if it is below 1 we toss it out since it does not explain much info about our data.it is suggest us to keep 15 PC.
+
+pca_model$rotation[,1:15]
+
+###############################################################################
+#########################################FA:(not working)###################################
+###############################################################################
+
+
+df2 = subset(le_dropped, select = -c(Country) )
+head(df2)
+
+#Need to eliminate non numeric variables before running factor analysis below
+head(df)
+#fa_model <- factanal(df2, factors = 13)
+```
+
+
+```{r}
+#Histogram & QQPlot
+par(mfrow=c(1,2)) 
+hist(df$Life.expectancy, col='steelblue', main='Life.expectancy_Histogram')
+#not really a good "bell-shape"
+qqnorm(df$Life.expectancy, main='Life.expectancy_QQplot')
+#most of the data is not fall along a straight diagonal line 
+qqline(df$Life.expectancy)
+
+#Both are indicating that our predict variable Y "df$Life.expectancy" is not normally distributed 
+```
+
+```{r}
+#Kolmogorov-Smirnov Test 
+
+ks.test(df$Life.expectancy, 'pnorm')
+
+#Finding: Since df$Life.expectancy p-value is less than .05, indicate that our y variable is not normally distributed!!!
+```

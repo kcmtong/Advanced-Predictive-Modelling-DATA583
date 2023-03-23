@@ -59,7 +59,9 @@ As Multicollinearity can potentially affect the accuracy of regression model and
 
 
 
-```{r include=FALSE}
+```{r, include=FALSE}
+### Start of EDA section - retained in Rmd
+
 le <- read.csv("dataset/LifeExpectancy.csv")
 
 # Create a new column Status.val to represent the Status column with number
@@ -71,7 +73,7 @@ le$Status.val <- ifelse(le$Status == "Developed",1,0)
 le <- subset(le,select=-c(percentage.expenditure))
 ```
 
-```{r include=FALSE}
+```{r, include=FALSE}
 # Null Data Handling
 library(magrittr) 
 library(dplyr)  
@@ -187,7 +189,7 @@ for(i in 1:ncol(le_dropped)) {                                   # Replace NA in
 ```
 
 
-```{r eval=FALSE, fig.height=2, fig.width=2, message=FALSE, warning=FALSE, include=FALSE}
+```{r, eval=FALSE, fig.height=2, fig.width=2, message=FALSE, warning=FALSE, include=FALSE}
 library(ggplot2)
 #install.packages("tidyverse")
 library(tidyverse)
@@ -210,7 +212,7 @@ le_dropped %>%
 ```
 
 
-```{r eval=FALSE, fig.height=2, message=FALSE, warning=FALSE, include=FALSE}
+```{r, eval=FALSE, fig.height=2, message=FALSE, warning=FALSE, include=FALSE}
 le_dropped.pivot <- pivot_longer(le_dropped,c(Adult.Mortality,under.five.deaths,infant.deaths),names_to='Mortality.Group',values_to='Mortality.Rate')
 require(gridExtra)
 
@@ -234,7 +236,7 @@ grid.arrange(le_dropped.pivot.area,le_dropped.pivot.line, ncol=2)
 ```
 
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 head(le_dropped)
 ```
 
@@ -243,17 +245,6 @@ head(le_dropped)
 #df = subset(le_dropped, select = -c(Country,GDP,Population) )
 df = subset(le_dropped, select = -c(Country) )
 #head(df)
-```
-
-
-
-```{r eval=FALSE, fig.height=3, fig.width=3, message=FALSE, warning=FALSE, include=FALSE}
-#library(Hmisc)
-#library(GGally)
-#ggpairs(df)
-#df_hist <- df
-#colnames(df_hist)[3]<-"LifeExp"
-#hist.data.frame(df_hist[3])
 ```
 
 
@@ -284,19 +275,13 @@ lmmod <- lm(Life.expectancy~., data = df)
 summary(lmmod)
 ```
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
-par(mfrow=c(1,2),heights=c(1,1,1,1))
-plot(lmmod)
-```
-
-
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 model.step.bic <- step(lmmod,k=log(nrow(df)))
 summary(model.step.bic)
 ```
 
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 library(car)
 vif(model.step.bic)
 
@@ -305,116 +290,71 @@ vif(model.step.bic)
 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-df1<-df[,c('Life.expectancy','Status','Adult.Mortality','infant.deaths','under.five.deaths',
+df1<-df[,c('Life.expectancy','Adult.Mortality','infant.deaths','under.five.deaths',
       'Hepatitis.B','BMI','Polio','Diphtheria',
       'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP')]
 
-df1$Status <- factor(df1$Status)
-#removed 'under.five.deaths', due to vif - multi collinearity from BIC selection but it decreased model
-#performance so should we retain it?
+# df1$Status <- factor(df1$Status)
+# removed 'under.five.deaths', due to vif - multi collinearity from BIC selection but it decreased model
+#  performance so should we retain it?
 #head(df1)
 ```
 
 
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+#not carrying forward any clustering analysis for the first release of the report due to time
+#constraints
 library(mclust)
 clus1 <- Mclust(df1)
 summary(clus1)
 ```
+We eliminate the Status variable from the selected list of variables in the reduced model as this is a factor variable with two statuses and not continuous. We first study the effect of the model without this variable. 
 
-
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
-# Clustering
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+library(car)
 lmmod2 <- lm(Life.expectancy~.,data=df1)
 summary(lmmod2)
 vif(lmmod2)
+
+### End of EDA
+### Start of model building and assessments
 ```
 
 
 ## Part 3. Regression Analysis
 
 
-### PLEASE FEEL FREE TO MODIFY/RESTRUCTURE THE FOLLOWING SECTIONS ACCORDING TO THE FINAL REPORT 
+### Linear model and diagnostics
 
+The initial model shows that we are able to explain approximately 82% of variability of our response variable using the selected predictor variables. The next step is to look at the error diagnostics from the model.
 
-## Questions and Next Steps
-1. Does the variables selected using BIC and linear model able to explain Life Expectancy adequately? A hypotheses test is required for this.
-
-2. Is the response variable normally distributed? Shapiro-Wilk test for normality will need to be conducted for this.
-
-3. Is Multi linear regression the best model or go with other non parametric models? From initial feedback, there are hypotheses tests available to validate this.
-
-Need to explore further on these questions from proposal stage and conclude.
-
-4. Understanding impact of individually controlled factors - The dataset has all predicting variables divided into 4 groups: Immunization related factors, Mortality factors, Economical factors and Social factors. Some of these factors are controllable by individuals like immunization, alcohol etc. Some of these factors are noncontrollable and macro elements like GDP. If an individual within a country want to improve life expectancy, how much is controllable/can be influenced personally? What proportion of variation in life expectancy can be explained by these variables? For example, What is the effect of “Alcohol/BMI” on the life expectancy?
-
-5. Understanding impact of Government/Public controlled factors - From Government perspective, how are the preventive measures influencing life expectancy? What proportion of variation in life expectancy can be explained by these variables? For example, Does Higher health expenditure (column H) on Health improve life expectancy?
-
-
-
-```{r message=FALSE, warning=FALSE, include=FALSE}
-## Extra - add if there is page available
-
-#str(le)
-class(df$Country)
-glm_model <- glm(Life.expectancy~., data = df, family = "gaussian")
-bic_back <- step(glm_model, k=log(nrow(df)), direction="backward", trace=FALSE)
-summary(bic_back)
-summary(glm_model)
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+par(mfrow=c(1,2),heights=c(1,1,1,1))
+plot(lmmod2)
 ```
+The QQ plot suggests that the model is heavy tailed and the data on both ends of the quantiles do not fit on a straight line. This is an indication that the current linear regression based model is not fitting the data well. Based on this, we undertake some additional testing to validate if the model is adequate and valid
 
+#### a. Life expectancy variable distribution
 
-
-```{r message=FALSE, warning=FALSE, include=FALSE}
-###############################################################################
-###############PCA(suggest a simpler scoring system):##########################
-###############################################################################
-#head(df[,-3])
-head(df[,c(-1,-3)])
-df$Status <- as.numeric(as.factor(df$Status)) #Convert Non-Numeric Columns to Numeric for PCA
-pca_model <- prcomp(df[,c(-1,-3)],scale.=TRUE)
-summary(pca_model)
-
-```
-```{r message=FALSE, warning=FALSE, include=FALSE}
-#Use Sceen Plot to decide how many PC to keep, But there seems to be a large value in our PC1 Standard Deviation so it isn't a clear indicator.
-
-plot(pca_model, type="lines")
-```
-```{r message=FALSE, warning=FALSE, include=FALSE}
-#Use Standard deviation instead to decide how many PC to keep, if it is below 1 we toss it out since it does not explain much info about our data.it is suggest us to keep 15 PC.
-
-pca_model$rotation[,1:15]
-
-###############################################################################
-#########################################FA:(not working)###################################
-###############################################################################
-
-
-df2 = subset(le_dropped, select = -c(Country) )
-head(df2)
-
-#Need to eliminate non numeric variables before running factor analysis below
-head(df)
-#fa_model <- factanal(df2, factors = 13)
-```
-
-
-
-1. normal distribution test for our y variable 
 
 ```{r}
 #Histogram & QQPlot
 par(mfrow=c(1,2)) 
-hist(df$Life.expectancy, col='steelblue', main='Life.expectancy_Histogram')
+hist(df$Life.expectancy, col='steelblue', main='Life.expectancy_Histogram',breaks = 35)
 #not really a good "bell-shape"
-qqnorm(df$Life.expectancy, main='Life.expectancy_QQplot')
-#most of the data is not fall along a straight diagonal line 
-qqline(df$Life.expectancy)
+#qqnorm(df$Life.expectancy, main='Life.expectancy_QQplot')
+#S #most of the data is not fall along a straight diagonal line 
+#qqline(df$Life.expectancy)
 
 #Both are indicating that our predict variable Y "df$Life.expectancy" is not normally distributed 
 ```
+
+From the histogram, it can be noticed that the response variable life expectancy is not normally distributed. From the plot, it also seems like a bimodal distribution of life expectancy data in the dataset.
+
+#### b. Normal distribution test for our y variable 
+
+Next, we evaluate to confirm if the response variable is normally distributed using Shapiro-Wilk test. The test has a p-value that is very small and is less than 0.05, this indicates that our response variable if not normally distributed. 
 
 ```{r}
 #Shapiro-Wilk Test
@@ -424,63 +364,61 @@ shapiro.test(df$Life.expectancy)
 #Finding: Since df$Life.expectancy p-value is less than .05, indicate that our y variable is not normally distributed!!!
 ```
 
-
+#### c. Parametric model specification tests
+Another test to see if the above parametric model specification is correct.
 ```{r}
-#Kolmogorov-Smirnov Test 
-
-ks.test(df$Life.expectancy, 'pnorm')
-
-#Finding: Since df$Life.expectancy p-value is less than .05, indicate that our y variable is not normally distributed!!!
+library(lmtest)
+resettest(lmmod2)
 ```
-########################################
-LM with matching dependent variable with npreg
-```{r}
 
+#### d. np specification test
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+#LM with matching dependent variable with npreg
 model_lm <- lm(Life.expectancy~Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling, data = df, x=TRUE, y=TRUE)
 summary(model_lm)
 ```
-########################################
 
-2. npreg on our dataset?  
-
-Note: When have time need to rerun with "x=True, y=True", "VIF remove", "add status.val", "train split"
-```{r cache=TRUE}
-library(np)
-# n <- names(df)
-# f <- as.formula(paste("df$Life.expectancy ~", paste(n[!n %in% "Life.expectancy"], collapse = " + ")))
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# X <- data.frame(df$Adult.Mortality,df$infant.deaths,df$Hepatitis.B,df$BMI,df$under.five.deaths,df$Polio,df$Diphtheria,df$HIV.AIDS,df$GDP,df$thinness..1.19.years,df$Income.composition.of.resources,df$Schooling)
 # 
-# model_np <- npregbw(Life.expectancy ~ Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling, data = df, regtype="ll", bwmethod = "cv.aic")    #19 HRs to run...
-
-# model_np <- npreg(bws = model_np)
-# summary(model_np)
-model_np <- readRDS("model_np.rds") #PreTrained Model
-summary(model_np)
+# result_npcms <- npcmstest(model=model_lm, xdat=X, ydat=df$Life.expectancy) #33Hours to run
 ```
-```{r}
+
+```{r echo=FALSE}
+# result_npcms
+
 # objects()
-# find("model_np")
+# find("result_npcms")
 # 
-# saveRDS(model_np,"model_np.rds")
-
+# saveRDS(result_npcms,"result_npcms.rds")
+result_npcms <- readRDS("result_npcms.rds") #PreTrained Model
+summary(result_npcms)
 ```
 
-```{r cache=TRUE}
-#npsigtest_npreg <- npsigtest(model_np)    #10 HRs to run...
-```
-![npsigtest_npreg result](dataset/npsigtest_npreg.png)
 
-3. LASSO and Neuralnet
+
+All the diagnostic tests indicate that linear regression is not an appropriate model for the given data as assumptions for the model are violated.
+
+
+### Parametric model and assessments
+
+As the linear model is not adequate, we move on to model this with other models that do not assume normal distribution. The models selected for the given dataset are LASSO and Neural Net with  linear activation function. The following variables are selected for rest of the modeling based on correlation of the variables with the response variable and our knowledge on the domain. Here is a summary of the variable selection and our comments.
+
+## Need to add a table
+
+
 Two different supervised algorithms tried on the dataset. They do not have the constraint of a normal distribution for response variable.
 
-First did a train and test split so we can measure the MSE and compare how each of the models are performing interms of minimizing MSE.
+First did a train and test split so we can measure the MSE and compare how each of the models are performing in terms of minimizing MSE.
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(glmnet)
-#70:30 split for train and test
+# approximately 70:30 split for train and test
 
 df1<-df[,c('Life.expectancy','Adult.Mortality','infant.deaths','under.five.deaths',
       'Hepatitis.B','BMI','Polio','Diphtheria',
-      'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP','Status.val')]
+      'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP')]
 
 ind <- sample(1:nrow(df1), 2000)
 traino <- df1[ind,]
@@ -488,18 +426,15 @@ testo <- df1[-ind,]
 ```
 
 
-Linear model
-```{r}
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#linear model for comparison
 lmmodtr <- lm(traino[,1]~.,data=traino[,-1],x=TRUE, y=TRUE)
 summary(lmmodtr)
 
 ```
-Another test to see if the above parametric model specification is correct.
-```{r}
-library(lmtest)
-resettest(lmmodtr)
-```
-```{r}
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
 #LASSO
 library(glmnet)
 y <- traino$Life.expectancy
@@ -517,20 +452,21 @@ plot(cv_model)
 lasmod <- glmnet(as.matrix(traino[,-1]),traino$Life.expectancy, alpha = 1, lambda = best_lambda)
 coef(lasmod)
 ```
-```{r}
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
 #linear model
 mselm_te1 <- mean((testo[,1]-predict(lmmodtr, newdata=testo))^2)
 
 #lasso
 mselas_te1 <- mean((testo[,1]-predict(lasmod, newx=as.matrix(testo[,-1])))^2)
-print(mselm_te1)
-print(mselas_te1)
-#MSE comparison
 
 ```
-```{r}
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(nnet)
 #18 MSE
+hidden <- 0
+nnmse <- 0
 for(i in 1:62){
   
   set.seed(4521)
@@ -539,40 +475,71 @@ for(i in 1:62){
 #calculating mse
 
   mse_nnet_lin <- mean((testo[,1]-(predict(train_lin, newdata=testo)))^2)
-  print(paste("Number of hidden layer variables:", i))
-  print(paste("MSE:",mse_nnet_lin))
+  hidden[i] <- i
+  nnmse[i] <- mse_nnet_lin
+  #print(paste("Number of hidden layer variables:", i))
+  #print(paste("MSE:",mse_nnet_lin))
   
 }
 ```
 
-##Pending
-1. np specification test
+Test MSE comparison for the three models
+
+### Need to add a table
+```{r}
+print(mselm_te1)
+print(mselas_te1)
+print(min(mse_nnet_lin))
+#MSE comparison
+```
+As we compare linear model, lasso and neural net, we see that the test MSE is minimum for LASSO model. So this is a model that can be considered for the dataset.
+
+### Nonparametric regression
+
+The response variable shows a bimodal distribution and nonparametric regression performs better on such datasets per literature. We next try non parametric regression on the dataset.
+
+
+
 ```{r cache=TRUE}
-# X <- data.frame(df$Adult.Mortality,df$infant.deaths,df$Hepatitis.B,df$BMI,df$under.five.deaths,df$Polio,df$Diphtheria,df$HIV.AIDS,df$GDP,df$thinness..1.19.years,df$Income.composition.of.resources,df$Schooling)
+library(np)
+# n <- names(df)
+# f <- as.formula(paste("df$Life.expectancy ~", paste(n[!n %in% "Life.expectancy"], collapse = " + ")))
 # 
-# result_npcms <- npcmstest(model=model_lm, xdat=X, ydat=df$Life.expectancy) #33Hours to run
+# model_np <- npregbw(Life.expectancy ~ Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling, data = df, regtype="ll", bwmethod = "cv.aic")    #19 HRs to run...
+
+# model_np <- npreg(bws = model_np)
+# summary(model_np)
+model_np <- readRDS("model_np.rds") #PreTrained Model
+summary(model_np)
 ```
-```{r}
-# result_npcms
+We see that the R^2 is increased to 87% approximately. Done with local linear estimator and cv.aic. This is a cross validated model and help estimate the long run performance. Can we see BIC? 
 
-# objects()
-# find("result_npcms")
-# 
-# saveRDS(result_npcms,"result_npcms.rds")
-result_npcms <- readRDS("result_npcms.rds") #PreTrained Model
-summary(result_npcms)
+```{r cache=TRUE}
+#npsigtest_npreg <- npsigtest(model_np)    #10 HRs to run...
 ```
+![npsigtest_npreg result](dataset/npsigtest_npreg.png)
 
-2. Visualizing bimodal distribution of yS
+We measure the significance of the variables for a parsimonious model. All the parameters used are significant.
 
-```{r}
-#Histogram & QQPlot
-par(mfrow=c(1,2)) 
-hist(df$Life.expectancy, col='steelblue', main='Life.expectancy_Histogram',breaks = 35)
-#not really a good "bell-shape"
-qqnorm(df$Life.expectancy, main='Life.expectancy_QQplot')
-#S #most of the data is not fall along a straight diagonal line 
-qqline(df$Life.expectancy)
 
-#Both are indicating that our predict variable Y "df$Life.expectancy" is not normally distributed 
-```
+Summarizing the different models and the performance assessed during the course of this project
+#### Add table
+
+## Model improvements
+
+1. status variable and other ordinal, nominal variables
+2. train and test split for np, but what we have now is sufficient for measuring long run performance
+3. multicollinearity between the variables infant.deaths and under.five.deaths. Remove one of the variables and study if there are improvements in performance
+4. measure without imputing data
+
+## Challenges
+1. 30 hours for npreg
+2. 30+ hours for model significance
+3. null values in the dataset, columns dropped - , columns imputed with mean - 
+
+## Conclusion
+np and LASSO are suitable for this dataset. We find that life expectancy is....
+
+
+
+
