@@ -238,7 +238,7 @@ grid.arrange(le_dropped.pivot.area,le_dropped.pivot.line, ncol=2)
 head(le_dropped)
 ```
 
-```{r include=FALSE, warning=FALSE, include=FALSE}
+```{r warning=FALSE, include=FALSE}
 
 #df = subset(le_dropped, select = -c(Country,GDP,Population) )
 df = subset(le_dropped, select = -c(Country) )
@@ -266,51 +266,44 @@ ggcorr(df,palette = "RdBu", size=2,label=TRUE,label_size = 2,hjust = .95,layout.
 ```
 
 
-## Part 3. Regression Analysis
+### Variables Selection
+Due to the above correlations between certain variables, in addition to a large number of variables in our model, a variable selection is conducted to remove some correlated variables and attain a simpler model via variable selection.   A BIC backward step model selection method has been applied to the dataset, with the following summary :
 
+|Models           |No. of Variables |AIC Score    |Adj R-squared Score|
+|-----            |-----            |-----        |-----|       
+|Original Model   |20               |7642.14      |0.8299|
+|Reduced Model    |12               |7604.24      |0.8296|
 
-### PLEASE FEEL FREE TO MODIFY/RESTRUCTURE THE FOLLOWING SECTIONS ACCORDING TO THE FINAL REPORT 
+The reduced model now contains the following variables : Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling
 
-### Initial Modelling and Variable Importance:
-As response variable Life.Expectancy is approximately normally distributed, first step is to try lm model for this data and also run BIC to get the variable selection from the dataset.
+The number of independent variables are now effectively reduced to 12, together with a lower AIC score of 7604.34. Meanwhile, the adjusted R-squared score is well kept at nearly the same level as in the original model.  We are satisfied with the performance of this reduced model.  This reduced model will therefore be adopted as the basis for further analysis in this report.
 
-The dataset has 20+ predictors and based on correlation plot there are correlation between the variables, BIC would help to eliminate some of the predictors that are conveying same signal as others and also explains less variability in life expectancy.
-
+```{r message=FALSE, warning=FALSE, include=FALSE}
 #### Full model summary and diagnostics
-```{r message=FALSE, warning=FALSE,echo=FALSE}
 lmmod <- lm(Life.expectancy~., data = df)
 summary(lmmod)
 ```
 
-```{r echo=FALSE,message=FALSE, warning=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 par(mfrow=c(1,2),heights=c(1,1,1,1))
 plot(lmmod)
 ```
 
-Residuals related plots: The residuals versus fits plot would provide us with information on the residual against the fitted values in regression analysis. This could be used to identify the patterns in the residuals that may indicate the model is not capturing the relationship between our predictor and the outcome variable, therefore, allowing us to detect any non-linearity, unequal error variances and outliers.  In general, we would want to see our residual randomly scattered around 0 since this indicates that the model assumption is met and is a good fit for the data. However, from the above-plotted residuals versus fits plot, we could see there is a curvature shape to our residuals and there is a presence of outliers and high leverage points on the left-hand side of the residuals versus fits the plot, This could be problematic since outliers and leverage points could have a significant impact on the regression coefficient. And the curved shape indicates that our model may be misspecified and further investigation is needed. Also, same is indicated by the scale-location plat with standardized residuals > 1.5. Based on leverage plot, we do not see the need to remove any outliers in this initial assessment. 
-
-QQ plot: QQ-plot (Quantile-quantile plot) allow us to investigate the univariate normality of the dataset. If the points on the QQ-plot fall approximately along a straight line, it suggests that the sample comes from a population with similar distribution to the theoretical distribution that we are comparing to. From the QQ-plot that we have plotted above, the point deviates from a straight line on both ends and indicates there is a heavy tail. 
-
-We make a note of the structures in the initial assessment and acknowledge they could impact the MLR performance. During next stage of the project, we plan to address the issues identified in diagnostics during final modeling.
-
-#### Variable selection methods
-Following is the summary from a couple of common methods used in variable section of models: BIC(Bayesian information criterion, backward selection) and VIF (Variable Inflation Factor).
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 model.step.bic <- step(lmmod,k=log(nrow(df)))
 summary(model.step.bic)
 ```
-Initially, all 20 variables were used in our model and achieved an AIC score of 7642.14. After performing BIC backward step model selection method, The BIC backward step model selection method has reduced our model’s independent variable to 13 and achieved a lower AIC score of 7604.34. Since a lower AIC score signifies the regression is a better fit to the data, meaning that after removing some irrelevant variable in our data set, the simple model is still able to explain the data well well and has improved the fitting from the initial model. Also the final reduced model has an Adjusted R-squared score of 0.8296 compared to the original model’s 0.8299 isn’t much of a drop in the Adjusted R-squared score meaning our BIC reduced model was still able to have the same amount of variability.
 
-Now going back to variable selection, this time we will be using VIF(Variance Inflation Factor) to investigate whether it is possible to come up with a better model from BIC reduced model by eliminating some highly correlated variables in the data. 
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 library(car)
 vif(model.step.bic)
 
 #removed one of infant.deaths or under.five.deaths
 ```
-VIF(Variance Inflation Factor) is a variable selection method that is used to identify and eliminate highly correlated variables in a regression model. If the VIF value for a variable is high, it indicates that the variable is highly correlated with another predictor within the model. From the above output, we could see that variables “infant.deaths” and “under.five.deaths” are highly correlated. Therefore we will have to remove either “infant.deaths” or “under.five.deaths” to resolve the multicollinearity within our data inorder to improve our model accuracy and interpretability. We acknowledge this may be necessary for next level of tuning the model.
+
+
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 df1<-df[,c('Life.expectancy','Status','Adult.Mortality','infant.deaths','under.five.deaths',
       'Hepatitis.B','BMI','Polio','Diphtheria',
@@ -322,31 +315,27 @@ df1$Status <- factor(df1$Status)
 #head(df1)
 ```
 
-After doing variable reduction and selecting only variables that are recommended by BIC (Status + Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling), we move on checking for any clustering effects in data. 
 
-```{r message=FALSE, warning=FALSE}
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 library(mclust)
 clus1 <- Mclust(df1)
 summary(clus1)
 ```
-#### Clustering
-Looks like there are some clusters in the data, first understanding is it is because of variable “Status”’s developed vs developing. Acknowledging this information which may be helpful in future phases of model building and fine tuning. For example, if MLR would be the final model, building interaction with cluster variable and rest of data would further improve model performance.
 
-Using our reduced model, we feed that data to Linear Model and achieve an Adjusted R-squared of 0.8296 and all variables have a p-value of less the 0.05, meaning that all of our independent variables within the model is statically significant to our dependent variable, In other words, there is strong evidence against the null hypothesis, suggesting that the observed relation between other dependent variable and independent variable is significant and real, not just due to random variation or chance.
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# Clustering
 lmmod2 <- lm(Life.expectancy~.,data=df1)
 summary(lmmod2)
 vif(lmmod2)
 ```
-### Conclusion/Key Findings
-Summarized below are some key findings from EDA.
 
-- Response variable is looking to be normally distributed and initial model score is ~82% which means this model is able to explain 82% of variation in Life expectancy. Its possible to use multiple linear regression for this data. From the diagnostic plots it may be seen that there is skewness in the data.
-- There are some variables that suffer multi collinearity (from VIF) scores.
-- Not all predictors are necessary to describe response variable. Model selection will be helpful.
 
-Due to the spread of data (clustering, non-linearity of predictors w response variable, skewness in data), it is necessary to explore other models specifically non-parametric regression models.
+## Part 3. Regression Analysis
+
+
+### PLEASE FEEL FREE TO MODIFY/RESTRUCTURE THE FOLLOWING SECTIONS ACCORDING TO THE FINAL REPORT 
 
 
 ## Questions and Next Steps
@@ -573,14 +562,16 @@ for(i in 1:62){
 result_npcms <- readRDS("result_npcms.rds") #PreTrained Model
 summary(result_npcms)
 ```
+
 2. Visualizing bimodal distribution of yS
+
 ```{r}
 #Histogram & QQPlot
 par(mfrow=c(1,2)) 
 hist(df$Life.expectancy, col='steelblue', main='Life.expectancy_Histogram',breaks = 35)
 #not really a good "bell-shape"
 qqnorm(df$Life.expectancy, main='Life.expectancy_QQplot')
-S#most of the data is not fall along a straight diagonal line 
+#S #most of the data is not fall along a straight diagonal line 
 qqline(df$Life.expectancy)
 
 #Both are indicating that our predict variable Y "df$Life.expectancy" is not normally distributed 
