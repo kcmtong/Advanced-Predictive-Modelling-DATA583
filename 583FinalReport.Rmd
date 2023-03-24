@@ -16,14 +16,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Data 583 Life Expectancy - Final Report (Life Expectancy Data)
 
-## Part 1. Introduction and Hypotheses
-Life Expectancy has always been an area of interest for humanity.  The dataset contains the Life Expectancy records of 193 countries between 2000-2015, together with different predictive factors. Broadly speaking, predicting variables are categorized into 4 major areas : Immmunization, Mortality, Economical, and Social, containing a total of 21 individual variables.
+## 1. Introduction and Hypotheses
+Life expectancy has always been an area of interest for humanity. The goal of this project is to study a dataset that contains information on life expectancy and identify some of the variables that significantly impact life expectancy. The dataset chosen for the study has life expectancy data of 193 countries between 2000-2015, together with different predictive factors. Broadly speaking, predicting variables are categorized into 4 major areas : Immunization, Mortality, Economical, and Social, containing a total of 21 individual  variables. Our hypothesis is that a subset of variables from this dataset would be able to explain and predict life expectancy with good accuracy (say > 80%). The dataset has a mix of variable types – continuous and discrete. Within discrete types, some variables are ordinal, and some are non-ordinal or nominal. With such a mix and complexity of data, we also hypothesize that all variables will not share a simple linear relationship with the predictor variable and modelling of life expectancy will require a more complex model. We analyze and validate several statistical models throughout the report with the primary goal of identifying an adequate model for the dataset.
 
-The primary purpose of this report is to compare and evaluate different predictive models in order to identify the most appropriate model for the dataset.  In particular, we will evaluate the applicability of the core assumptions of the selected models by methods such as Normality Test, Multicollinearity Assessment, etc. This could validate or decline the adoption of certain models because the model assumptions are simply not satisfied.  We are also going to verify whether the 4 predicting areas have equal significance on Life Expectancy, and whether there are adequate support evidence suggesting a strong correlation with the response variables.  Finally, we will also perform and compare fitting result of selected models, in particular whether parametric models would be more suitable than non-parametric models for this dataset. 
+## 2. Dataset overview
 
-## Part 2. Dataset overview
+### Variables Summary and Categories
+Life expectancy is the response variable in this dataset.  This represents the mean life expectancy (in age) by specific country and year combination. Refer Figure-1 below for the list of predictor variables and their categories.
+The dataset also had 2563 missing values in various columns and  ……the NA values are generally imputed by the respective column mean. Percentage expenditure variable is removed from the entire assessment as the values present in this column are unclear. Another variable country is removed for the purpose of studying life expectancy globally. The resulting dataset with x rows and y columns are then studied closely to understand their correlation effects with the response variable life expectancy.
+#(Kenny, please add if any other deletion done in .... line and fill in on x and y)
 
-### Varaibles Types
+
 |Variable     |Unit of Measurement/Data Category    | Continuous vs Discrete |   Variable     |Unit of Measurement/Data Category    | Continuous vs Discrete |
 |-----        |-----                                | ----- |   -----        |-----                                | ----- |
 |Life Expectancy |Years Old (Age)                   |Continuous  |Total expenditure|Percentage                       |Continuous|
@@ -37,17 +40,6 @@ The primary purpose of this report is to compare and evaluate different predicti
 |Measles      |Count Data                           |Discrete  |BMI          |Average BMI                          |Continuous|
 |Polio        |Percentage                           |Continuous  |Thinness 1-19 years|Percentage                     |Continuous|
 |Diphtheria   |Percentage                           |Continuous  |Thinness 5-9 years|Percentage                      |Continuous|
-
-
-
-### Variables Summary and Categories
-Life Expectancy is the response variable in this dataset.  This represents the mean of the life expectancy (in age) in a specific country in a given year.  For the data types of the predicting variables, most are percentage and count data across four major areas.  The first area is Immunization Data such as Hepatitis B and Polio (immunization coverage).  The second area is Mortality Data such as Adult Mortality/infant deaths (No. of deaths of Adult/infant per 1000 persons).  The third area is Economical Data such as GDP/Income composition/Percentage expenditure.  The fourth area is Social Data such as Schooling and Population.
- 
-To clean up and wrangle data for the subsequent analysis, NA data has been assessed.  A total of 2563 NA values are found in the dataset, spreading across a few columns.  These NA values are generally imputed by the respective column mean.   
-
-### Checking for Multicollinearity
-As Multicollinearity can potentially affect the accuracy of regression model and we have 22 variables, a correlation study is undertaken to understand and assess the situation.  A correlation plot has identified a number of correlation problems.  It is found that infant deaths and under.five.deaths are nearly 100% correlated.  The relation between the deaths rates of the two close age groups is easily interpretable.  In addition, there are three heavily correlated pairs which is defined by the abs(correlation coefficient)>0.7 between the variables.  They include (a) (immunization rate of) ‘Polio’-vs-‘Diphtheria’,  (b) ‘income composition of resources’-vs-‘Schooling’, and (c) between the two thinness measures for the age groups 5-9 vs 10-19.   Pairs (a) and (c) are justifiable while the relation for (b) demonstrate a relatively subtle relation.  Other than that, the degree of multicollinearity is acceptable and not too worrying.
-
 
 
 ```{r, include=FALSE}
@@ -249,17 +241,21 @@ ggcorr(df,palette = "RdBu", size=2,label=TRUE,label_size = 2,hjust = .95,layout.
 ```
 
 
-### Variables Selection
-Due to the above correlations between certain variables, in addition to a large number of variables in our model, a variable selection is conducted to remove some correlated variables and attain a simpler model via variable selection.   A BIC backward step model selection method has been applied to the dataset, with the following summary :
+### Initial analysis using linear regression
+Life expectancy is a continuous variable and the first choice is building a linear regression model which is simple and interpretable. A BIC backward step model variable selection method is also applied on the full model to arrive at a parsimonious model containing only significant predictor variables. Following table Table A provides a summary of the two models.
 
-The reduced model now contains the following variables : Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling
+
 
 |Models           |No. of Variables |AIC Score    |Adj R-squared Score|
 |-----            |-----            |-----        |-----|       
 |Original Model   |20               |7642.14      |0.8299|
 |Reduced Model    |12               |7604.24      |0.8296|
 
-The number of independent variables are now effectively reduced to 12, together with a lower AIC score of 7604.34. Meanwhile, the adjusted R-squared score is well kept at nearly the same level as in the original model.  We are satisfied with the performance of this reduced model.  This reduced model will therefore be adopted as the basis for further analysis in this report.
+The number of independent variables are now effectively reduced to 12, together with a lower AIC score of 7604.34. Meanwhile, the adjusted R-squared score is well kept at nearly the same level as in the original model.  The reduced model is able to explain more than 82% of variation in the response variable and its performance is above the anticipated 80%.
+
+The reduced model now contains the following 12 variables : Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling.
+
+With performance of the model over 80%, the next step is to look at the error diagnostics from the model.
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 #### Full model summary and diagnostics
@@ -272,13 +268,6 @@ model.step.bic <- step(lmmod,k=log(nrow(df)))
 summary(model.step.bic)
 ```
 
-
-```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
-library(car)
-vif(model.step.bic)
-
-#removed one of infant.deaths or under.five.deaths
-```
 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
@@ -314,18 +303,19 @@ vif(lmmod2)
 ```
 
 
-## Part 3. Regression Analysis
+## 3. Regression Analysis
 
 
 ### Linear model and diagnostics
 
 The initial model shows that we are able to explain approximately 82% of variability of our response variable using the selected predictor variables. The next step is to look at the error diagnostics from the model.
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-par(mfrow=c(1,2),heights=c(1,1,1,1))
+```{r,echo=TRUE,results='markup', out.width="75%"}
+par(mfrow=c(2,2))
 plot(lmmod2)
 ```
-The QQ plot suggests that the model is heavy tailed and the data on both ends of the quantiles do not fit on a straight line. This is an indication that the current linear regression based model is not fitting the data well. Based on this, we undertake some additional testing to validate if the model is adequate and valid
+
+The QQ plot suggests that the model is heavy tailed and the data on both ends of the quantiles do not fit on a straight line. This is an indication that the current linear regression based model is not fitting the data well. Based on this, we undertake some additional testing to validate if the model is adequate and valid.
 
 
 #### a. Life expectancy variable distribution
@@ -358,15 +348,16 @@ shapiro.test(df$Life.expectancy)
 
 #Finding: Since df$Life.expectancy p-value is less than .05, indicate that our y variable is not normally distributed!!!
 ```
+As response is not normal, the next step is to validate with a hypothesis test for validating correct specification of parametric MLR models.
 
-#### c. Parametric model specification tests
+#### c. Parametric model specification test
 Another test to see if the above parametric model specification is correct.
 ```{r}
 library(lmtest)
 resettest(lmmod2)
 ```
 
-#### d. np specification test
+#### d. Consistent nonparametric inference
 
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 #LM with matching dependent variable with npreg
@@ -396,7 +387,7 @@ summary(result_npcms)
 All the diagnostic tests indicate that linear regression is not an appropriate model for the given data as assumptions for the model are violated.
 
 
-### Parametric model and assessments
+### Parametric regression models and relative assessments
 
 As the linear model is not adequate, we move on to model this with other models that do not assume normal distribution. The models selected for the given dataset are LASSO and Neural Net with  linear activation function. The following variables are selected for rest of the modeling based on correlation of the variables with the response variable and our knowledge on the domain. Here is a summary of the variable selection and our comments.
 
@@ -543,11 +534,13 @@ Test R2 comparison for the three models
 
 As we compare linear model, lasso and neural net, we see that the test MSE is minimum for LASSO model. So this is a model that can be considered for the dataset.
 
+#### Diagnostics
+
 ### Nonparametric regression
 
 The response variable shows a bimodal distribution and nonparametric regression performs better on such datasets per literature. We next try non parametric regression on the dataset.
 
-
+#### Diagnostics
 
 ```{r cache=TRUE}
 library(np)
@@ -572,7 +565,7 @@ We measure the significance of the variables for a parsimonious model. All the p
 
 
 Summarizing the different models and the performance assessed during the course of this project
-#### Add table
+# Add table
 
 ## Model improvements
 
@@ -591,6 +584,13 @@ np and LASSO are suitable for this dataset. We find that life expectancy is....
 
 
 
+## Appendix
+### Checking for Multicollinearity
+As Multicollinearity can potentially affect the accuracy of regression model and we have 22 variables, a correlation study is undertaken to understand and assess the situation.  A correlation plot has identified a number of correlation problems.  It is found that infant deaths and under.five.deaths are nearly 100% correlated.  The relation between the deaths rates of the two close age groups is easily interpretable.  In addition, there are three heavily correlated pairs which is defined by the abs(correlation coefficient)>0.7 between the variables.  They include (a) (immunization rate of) ‘Polio’-vs-‘Diphtheria’,  (b) ‘income composition of resources’-vs-‘Schooling’, and (c) between the two thinness measures for the age groups 5-9 vs 10-19.   Pairs (a) and (c) are justifiable while the relation for (b) demonstrate a relatively subtle relation.  Other than that, the degree of multicollinearity is acceptable and not too worrying.
 
+```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+library(car)
+vif(model.step.bic)
 
-
+#removed one of infant.deaths or under.five.deaths
+```
