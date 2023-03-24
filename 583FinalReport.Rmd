@@ -17,16 +17,21 @@ knitr::opts_chunk$set(echo = TRUE)
 # Data 583 Life Expectancy - Final Report (Life Expectancy Data)
 
 ## 1. Introduction and Hypotheses
-Life expectancy has always been an area of interest for humanity. The goal of this project is to study a dataset that contains information on life expectancy and identify some of the variables that significantly impact life expectancy. The dataset chosen for the study has life expectancy data of 193 countries between 2000-2015, together with different predictive factors. Broadly speaking, predicting variables are categorized into 4 major areas : Immunization, Mortality, Economical, and Social, containing a total of 21 individual  variables. Our hypothesis is that a subset of variables from this dataset would be able to explain and predict life expectancy with good accuracy (say > 80%). The dataset has a mix of variable types – continuous and discrete. Within discrete types, some variables are ordinal, and some are non-ordinal or nominal. With such a mix and complexity of data, we also hypothesize that all variables will not share a simple linear relationship with the predictor variable and modelling of life expectancy will require a more complex model. We analyze and validate several statistical models throughout the report with the primary goal of identifying an adequate model for predicting life expectancy.
+Life expectancy has always been an area of interest for humanity. The key to long live has remained an intriguing topic to people for decades.  The goal of this project is to study a dataset that contains information on life expectancy and identify some of the variables that significantly impact life expectancy. 
+
+The dataset chosen for the study has life expectancy data of 193 countries between 2000-2015, together with different predictive factors. Broadly speaking, predicting variables are categorized into 4 major areas : Immunization, Mortality, Economical, and Social, containing a total of 21 individual  variables. Our hypothesis is that a subset of variables from this dataset would be able to explain and predict life expectancy with good accuracy (say > 80%). The dataset has a mix of variable types – continuous and discrete. Within discrete types, some variables are ordinal, and some are non-ordinal or nominal. 
+
+With such a mix and complexity of data, we also hypothesize that all variables will not share a simple linear relationship with the predictor variable and modelling of life expectancy will require a more complex model. We analyze and validate several statistical models throughout the report with the primary goal of identifying an adequate model for the dataset.
+
 
 ## 2. Dataset overview
 
 ### Variables Summary and Categories
-Life expectancy is the response variable in this dataset.  This represents the mean life expectancy (in age) by specific country and year combination. Refer Figure-1 below for the list of predictor variables and their categories.
+Life expectancy is the response variable in this dataset.  This represents the mean life expectancy (in age) by specific country and year combination. Refer Table-1 and Table-2 below for the list of predictor variables and their categories.
 
-The dataset also had 2563 missing values in various columns and  ……the NA values are generally imputed by the respective column mean. Percentage expenditure variable is removed from the entire assessment as the values present in this column are unclear. Another variable country is removed for the purpose of studying life expectancy globally. 
+The dataset contains 2563 missing values in various columns.  To handle the NA values in the dataset, two main procedures are taken.  Firstly, those countries with many NA values in different columns have their records removed from the dataset.  Consequently, 12 countries are removed from the dataset.  Secondly, the remaining records are imputed by the respective column mean.
 
-#(Kenny, please add if any other deletion done in .... line and fill in on x and y)
+To begin with, the 'Percentage expenditure' variable is removed from the entire assessment as the values present in this column are unclear. Another variable 'country' is also removed because we intend to focus on studying the life expectancy on a global basis. The resulting dataset are then studied more closely to understand their correlation effects with the response variable life expectancy.
 
 
 |Variable     |Unit of Measurement/Data Category    | Continuous vs Discrete |   Variable     |Unit of Measurement/Data Category    | Continuous vs Discrete |
@@ -43,6 +48,10 @@ The dataset also had 2563 missing values in various columns and  ……the NA va
 |Polio        |Percentage                           |Continuous  |Thinness 1-19 years|Percentage                     |Continuous|
 |Diphtheria   |Percentage                           |Continuous  |Thinness 5-9 years|Percentage                      |Continuous|
 
+\begin{center}
+Table 1 : List of Predictor Variables
+\end{center}
+
 Following table shows how the above variables are grouped based on the 4 categories.
 
 |  **Data Categories**   |    **Variables**                                                                              |
@@ -51,6 +60,10 @@ Following table shows how the above variables are grouped based on the 4 categor
 | **Social Data**        | Country, Status, Population, Schooling, Alcohol, BMI, Thinness 1-19 years, Thinness 5-9 years|
 | **Mortality Data**     | Adult Mortality, Infant deaths, Under-five deaths                                            |
 | **Immunization Data**  | Hepatitis B, Measles, Polio, HIV/AIDS, BMI, Diphtheria                                       |
+
+\begin{center}
+Table 2 : Variable Categories
+\end{center}
 
 ```{r, include=FALSE}
 ### Start of EDA section - retained in Rmd
@@ -251,6 +264,10 @@ ggcorr(df,palette = "RdBu", size=2,label=TRUE,label_size = 2,hjust = .95,layout.
 
 ```
 
+\begin{center}
+Plot 1 : GG Variables Correlation Plot
+\end{center}
+
 It can be noted that the response variable life expectancy is highly correlated with income composition, schooling and adult mortality variables with a correlation value of $0.7$, $0.7$ and $-0.7$. Life expectancy is moderately correlated with variables BMI, Polio, Diphtheria, HIV.AIDS and thinness variables with a correlation value of $0.6$, $0.5$, $0.5$, $-0.6$, $-0.5$. Broadly, it can be noted that the two categories of the variables appear to be highly correlated with life expectancy when compared to other categories.
 
 ### Initial analysis using linear regression
@@ -263,9 +280,15 @@ Life expectancy is a continuous variable and the first choice is building a line
 |Original Model   |20               |7642.14      |0.8299|
 |Reduced Model    |12               |7604.24      |0.8296|
 
-The number of independent variables are now effectively reduced to 12, together with a lower AIC score of 7604.34. Meanwhile, the adjusted R-squared score is well kept at nearly the same level as in the original model.  The reduced model is able to explain more than 82% of variation in the response variable and its performance is above the anticipated 80%. The reduced model now contains the following 12 variables : Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling.
+\begin{center}
+Table 3 :Original vs Reduced Models
+\end{center}
 
-The reduced model from this step is selected as the first model for the dataset. It is used for further evaluation from a linear model stand point and will be referred to as linear model in the remainder of the discussion. 
+Note that we have also eliminated the Status variable in the reduced model as this is a factor variable with two statuses and not continuous. We plan to first study the effect of the model without this variable.  Finally, the number of independent variables is now effectively reduced to 12, achieving a lower AIC score of 7604.34. Meanwhile, the adjusted R-squared score is well kept at nearly the same level as in the original model.  The reduced model is able to explain more than 82% of variation in the response variable and its performance is above the anticipated 80%. 
+
+Specifically, the reduced model now contains the following 12 variables : Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling.
+
+To conclude, the reduced model from this step is selected as the first model for the dataset.  The dataset now has `r nrow(df)` records and 12 columns. It is used for further evaluation from a linear model stand point and will be referred to as linear model in the remainder of the discussion. 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 #### Full model summary and diagnostics
