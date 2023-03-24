@@ -24,30 +24,21 @@ The primary purpose of this report is to compare and evaluate different predicti
 ## Part 2. Dataset overview
 
 ### Varaibles Types
-|Variable     |Unit of Measurement/Data Category    | Continuous vs Discrete |
-|-----        |-----                                | ----- |
-|Life Expectancy |Years Old (Age)                   |Continuous|
-|Country      |Nominal Data                         |Discrete|
-|Year         |Ordinal Data                         |Discrete|
-|Status       |Nominal Data                         |Discrete|
-|Adult Mortality|Count Data                         |Discrete|
-|Infant deaths|Count Data                           |Discrete|
-|Under-five deaths|Count Data                       |Discrete|
-|Hepatitis B  |Percentage                           |Continuous|
-|Measles      |Count Data                           |Discrete|
-|Polio        |Percentage                           |Continuous|
-|Diphtheria   |Percentage                           |Continuous|
-|Total expenditure|Percentage                       |Continuous|
-|Percentage expenditure|Percentage                  |Continuous|
-|GDP          |Currency (USD)                       |Continuous|
-|Population   |Count                                |Discrete|
-|Income composition of resources|Percentage         |Continuous|
-|Schooling    |Mean (Years)                         |Continuous|
-|Alcohol      |Litres                               |Continuous|
-|HIV/AIDS     |Percentage                           |Continuous|
-|BMI          |Average BMI                          |Continuous|
-|Thinness 1-19 years|Percentage                     |Continuous|
-|Thinness 5-9 years|Percentage                      |Continuous|
+|Variable     |Unit of Measurement/Data Category    | Continuous vs Discrete |   Variable     |Unit of Measurement/Data Category    | Continuous vs Discrete |
+|-----        |-----                                | ----- |   -----        |-----                                | ----- |
+|Life Expectancy |Years Old (Age)                   |Continuous  |Total expenditure|Percentage                       |Continuous|
+|Country      |Nominal Data                         |Discrete  |Percentage expenditure|Percentage                  |Continuous|
+|Year         |Ordinal Data                         |Discrete  |GDP          |Currency (USD)                       |Continuous|
+|Status       |Nominal Data                         |Discrete  |Population   |Count                                |Discrete|
+|Adult Mortality|Count Data                         |Discrete  |Income composition of resources|Percentage         |Continuous|
+|Infant deaths|Count Data                           |Discrete  |Schooling    |Mean (Years)                         |Continuous|
+|Under-five deaths|Count Data                       |Discrete  |Alcohol      |Litres                               |Continuous|
+|Hepatitis B  |Percentage                           |Continuous  |HIV/AIDS     |Percentage                           |Continuous|
+|Measles      |Count Data                           |Discrete  |BMI          |Average BMI                          |Continuous|
+|Polio        |Percentage                           |Continuous  |Thinness 1-19 years|Percentage                     |Continuous|
+|Diphtheria   |Percentage                           |Continuous  |Thinness 5-9 years|Percentage                      |Continuous|
+
+
 
 ### Variables Summary and Categories
 Life Expectancy is the response variable in this dataset.  This represents the mean of the life expectancy (in age) in a specific country in a given year.  For the data types of the predicting variables, most are percentage and count data across four major areas.  The first area is Immunization Data such as Hepatitis B and Polio (immunization coverage).  The second area is Mortality Data such as Adult Mortality/infant deaths (No. of deaths of Adult/infant per 1000 persons).  The third area is Economical Data such as GDP/Income composition/Percentage expenditure.  The fourth area is Social Data such as Schooling and Population.
@@ -243,8 +234,9 @@ head(le_dropped)
 ```{r warning=FALSE, include=FALSE}
 
 #df = subset(le_dropped, select = -c(Country,GDP,Population) )
-df = subset(le_dropped, select = -c(Country) )
-#head(df)
+df = subset(le_dropped, select = -c(Country,Status.val) )
+head(df)
+
 ```
 
 
@@ -335,21 +327,24 @@ plot(lmmod2)
 ```
 The QQ plot suggests that the model is heavy tailed and the data on both ends of the quantiles do not fit on a straight line. This is an indication that the current linear regression based model is not fitting the data well. Based on this, we undertake some additional testing to validate if the model is adequate and valid
 
+
 #### a. Life expectancy variable distribution
 
 
 ```{r}
+
 #Histogram & QQPlot
 par(mfrow=c(1,2)) 
-hist(df$Life.expectancy, col='steelblue', main='Life.expectancy_Histogram',breaks = 35)
+# hist_bin_width = 4
+h <- hist(df$Life.expectancy, col='steelblue', main='Life.expectancy Histogram', breaks = 35)
 #not really a good "bell-shape"
-#qqnorm(df$Life.expectancy, main='Life.expectancy_QQplot')
+# install.packages("ggpubr")
+plot(lmmod2,which = 2)
 #S #most of the data is not fall along a straight diagonal line 
 #qqline(df$Life.expectancy)
 
 #Both are indicating that our predict variable Y "df$Life.expectancy" is not normally distributed 
 ```
-
 From the histogram, it can be noticed that the response variable life expectancy is not normally distributed. From the plot, it also seems like a bimodal distribution of life expectancy data in the dataset.
 
 #### b. Normal distribution test for our y variable 
@@ -405,7 +400,38 @@ All the diagnostic tests indicate that linear regression is not an appropriate m
 
 As the linear model is not adequate, we move on to model this with other models that do not assume normal distribution. The models selected for the given dataset are LASSO and Neural Net with  linear activation function. The following variables are selected for rest of the modeling based on correlation of the variables with the response variable and our knowledge on the domain. Here is a summary of the variable selection and our comments.
 
-## Need to add a table
+
+|  **Data Categories**   |    **Vaiables**                                                                              |
+|------------------------|----------------------------------------------------------------------------------------------|
+| **Economical Data**    | Total expenditure, Percentage expenditure, GDP, Income composition of resources              |
+| **Social Data**        | Country, Status, Population, Schooling, Alcohol, BMI, Thinness 1-19 years, Thinness 5-9 years|
+| **Mortality Data**     | Adult Mortality, Infant deaths, Under-five deaths                                            |
+| **Immunization Data**  | Hepatitis B, Measles, Polio, HIV/AIDS, BMI, Diphtheria                                       |
+
+| **Column Name **                  | **Type **       | **LM ** | **LASSO ** | **NN ** | **NPREG ** | **Reason of Removal**                                                       |
+|----------------------------------|--------------|--------|-----------|--------|-----------|-----------------------------------------------------------------------------|
+| Country                          | (Discrete)   |        |           |        |           | Since we wanted to build models for all countries                           |
+| Year                             | (Discrete)   |        |           |        |           | ordinal type data and based on domain knowledge, not consider important     |
+| Status                           | (Discrete)   |        |           |        |           | nominal type data and based on domain knowledge, not consider important     |
+| Adult Mortality                  | (Discrete)   | X      | X         |X       | X         |                                                                             |
+| Infant deaths                    | (Discrete)   | X      | X         |X       | X         |                                                                             |
+| Under-five deaths                | (Discrete)   | X      | X         |X       | X         |                                                                             |
+| Hepatitis B                      | (Continuous) | X      | X         |X       | X         |                                                                             |
+| Measles                          | (Discrete)   |        |           |        |           | Since it is a count and discrete type data and weak correlation with our predictor                  |
+| Polio                            | (Continuous) | X      | X         |X       | X         |                                                                             |
+| Diphtheria                       | (Continuous) | X      | X         |X       | X         |                                                                             |
+| Total Expenditure                | (Continuous) |        |           |        |           | based on domain knowledge, not consider important                           |
+| Percentage Expenditure           | (Continuous) |        |           |        |           | based on domain knowledge, not consider important                           |
+| GDP                              | (Continuous) | X      | X         |X       | X         |                                                                             |
+| Population                       | (Discrete)   |        |           |        |           | no correlation with our predictor indicated by our correlation plot         |
+| Income composition of resources  | (Continuous) | X      | X         |X       | X         |                                                                             |
+| Schooling                        | (Continuous) | X      | X         |X       | X         |                                                                             |
+| Alchol                           | (Continuous) |        |           |        |           | based on domain knowledge, not consider important                           |
+| HIV/AIDS                         | (Continuous) | X      | X         |X       | X         |                                                                             |
+| BMI                              | (Continuous) | X      | X         |X       | X         |                                                                             |
+| Thinness 1-19 years              | (Continuous) | X      | X         |X       | X         |                                                                             |
+| Thinness 5-9 years               | (Continuous) |        |           |        |           | range already covered in 1-19 Thinness 1-19 years                           |
+| status.val                       | (Continuous) |        |           |        |           | based on domain knowledge, not consider important                           |
 
 
 Two different supervised algorithms tried on the dataset. They do not have the constraint of a normal distribution for response variable.
@@ -453,6 +479,7 @@ lasmod <- glmnet(as.matrix(traino[,-1]),traino$Life.expectancy, alpha = 1, lambd
 coef(lasmod)
 ```
 
+
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 #linear model
 mselm_te1 <- mean((testo[,1]-predict(lmmodtr, newdata=testo))^2)
@@ -485,13 +512,35 @@ for(i in 1:62){
 
 Test MSE comparison for the three models
 
-### Need to add a table
+|           | **LM**   | **LASSO** | **NN**   |
+|-----------|----------|-----------|----------|
+| **PRESS** | 15.93367 | 15.98972  | 22.43056 |
+
 ```{r}
-print(mselm_te1)
-print(mselas_te1)
-print(min(mse_nnet_lin))
-#MSE comparison
+# #MSE comparison
+# print(mselm_te1)
+# print(mselas_te1)
+# print(min(mse_nnet_lin))
+
 ```
+Test R2 comparison for the three models
+
+|        | **LM**            | **LASSO**         |
+|--------|-------------------|-------------------|
+| **R2** | 0.829139273435324 | 0.829061931452822 |
+
+```{r}
+# #Linear Model R2
+# r2_lm<- summary(lmmodtr)$r.squared
+# paste("Linear Model R2: ",r2_lm)
+# 
+# #Lasso R2
+# r2_lasso <- lasmod$dev.ratio
+# paste("Lasso R2: ",r2_lasso)
+
+```
+
+
 As we compare linear model, lasso and neural net, we see that the test MSE is minimum for LASSO model. So this is a model that can be considered for the dataset.
 
 ### Nonparametric regression
@@ -539,6 +588,8 @@ Summarizing the different models and the performance assessed during the course 
 
 ## Conclusion
 np and LASSO are suitable for this dataset. We find that life expectancy is....
+
+
 
 
 
