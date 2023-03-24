@@ -252,12 +252,12 @@ ggcorr(df,palette = "RdBu", size=2,label=TRUE,label_size = 2,hjust = .95,layout.
 ### Variables Selection
 Due to the above correlations between certain variables, in addition to a large number of variables in our model, a variable selection is conducted to remove some correlated variables and attain a simpler model via variable selection.   A BIC backward step model selection method has been applied to the dataset, with the following summary :
 
+The reduced model now contains the following variables : Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling
+
 |Models           |No. of Variables |AIC Score    |Adj R-squared Score|
 |-----            |-----            |-----        |-----|       
 |Original Model   |20               |7642.14      |0.8299|
 |Reduced Model    |12               |7604.24      |0.8296|
-
-The reduced model now contains the following variables : Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling
 
 The number of independent variables are now effectively reduced to 12, together with a lower AIC score of 7604.34. Meanwhile, the adjusted R-squared score is well kept at nearly the same level as in the original model.  We are satisfied with the performance of this reduced model.  This reduced model will therefore be adopted as the basis for further analysis in this report.
 
@@ -331,7 +331,7 @@ The QQ plot suggests that the model is heavy tailed and the data on both ends of
 #### a. Life expectancy variable distribution
 
 
-```{r}
+```{r include=FALSE}
 
 #Histogram & QQPlot
 par(mfrow=c(1,2)) 
@@ -408,8 +408,8 @@ As the linear model is not adequate, we move on to model this with other models 
 | **Mortality Data**     | Adult Mortality, Infant deaths, Under-five deaths                                            |
 | **Immunization Data**  | Hepatitis B, Measles, Polio, HIV/AIDS, BMI, Diphtheria                                       |
 
-| **Column Name **                  | **Type **       | **LM ** | **LASSO ** | **NN ** | **NPREG ** | **Reason of Removal**                                                       |
-|----------------------------------|--------------|--------|-----------|--------|-----------|-----------------------------------------------------------------------------|
+| **Column Name **       | **Type **         | **LM ** | **LASSO **   | **NN ** | **NPREG **    | **Reason of Removal**                                                       |
+|------------------------|-------------------|---------|--------------|--------|--------------|-----------------------------------------------------------------------------|
 | Country                          | (Discrete)   |        |           |        |           | Since we wanted to build models for all countries                           |
 | Year                             | (Discrete)   |        |           |        |           | ordinal type data and based on domain knowledge, not consider important     |
 | Status                           | (Discrete)   |        |           |        |           | nominal type data and based on domain knowledge, not consider important     |
@@ -510,13 +510,13 @@ for(i in 1:62){
 }
 ```
 
-Test MSE comparison for the three models
+PRESS comparison for the three models
 
 |           | **LM**   | **LASSO** | **NN**   |
 |-----------|----------|-----------|----------|
 | **PRESS** | 15.93367 | 15.98972  | 22.43056 |
 
-```{r}
+```{r include=FALSE}
 # #MSE comparison
 # print(mselm_te1)
 # print(mselas_te1)
@@ -529,7 +529,7 @@ Test R2 comparison for the three models
 |--------|-------------------|-------------------|
 | **R2** | 0.829139273435324 | 0.829061931452822 |
 
-```{r}
+```{r include=FALSE}
 # #Linear Model R2
 # r2_lm<- summary(lmmodtr)$r.squared
 # paste("Linear Model R2: ",r2_lm)
