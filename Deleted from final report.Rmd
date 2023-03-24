@@ -87,3 +87,12 @@ ks.test(df$Life.expectancy, 'pnorm')
 
 #Finding: Since df$Life.expectancy p-value is less than .05, indicate that our y variable is not normally distributed!!!
 ```
+
+deleted as QQ plot is already present
+
+```{r,echo=TRUE,results='markup',fig.align = 'center' }
+qqnorm(df$Life.expectancy)
+qqline(df$Life.expectancy, col = "steelblue", lwd = 2)
+# plot(lmmod2,which = 2)
+#Both are indicating that our predict variable Y "df$Life.expectancy" is not normally distributed 
+```
