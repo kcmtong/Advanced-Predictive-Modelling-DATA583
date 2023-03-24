@@ -34,19 +34,19 @@ The dataset contains 2563 missing values in various columns.  To handle the NA v
 To begin with, the 'Percentage expenditure' variable is removed from the entire assessment as the values present in this column are unclear. Another variable 'country' is also removed because we intend to focus on studying the life expectancy on a global basis. The resulting dataset are then studied more closely to understand their correlation effects with the response variable life expectancy.
 
 
-|Variable     |Unit of Measurement/Data Category    | Continuous vs Discrete |   Variable     |Unit of Measurement/Data Category    | Continuous vs Discrete |
+|**Variable**     |**Unit of Measurement/Data Category**    | **Continuous vs Discrete** |   **Variable**     |**Unit of Measurement/Data Category**    | **Continuous vs Discrete** |
 |-----        |-----                                | ----- |   -----        |-----                                | ----- |
-|Life Expectancy |Years Old (Age)                   |Continuous  |Total expenditure|Percentage                       |Continuous|
-|Country      |Nominal Data                         |Discrete  |Percentage expenditure|Percentage                  |Continuous|
-|Year         |Ordinal Data                         |Discrete  |GDP          |Currency (USD)                       |Continuous|
-|Status       |Nominal Data                         |Discrete  |Population   |Count                                |Discrete|
-|Adult Mortality|Count Data                         |Discrete  |Income composition of resources|Percentage         |Continuous|
-|Infant deaths|Count Data                           |Discrete  |Schooling    |Mean (Years)                         |Continuous|
-|Under-five deaths|Count Data                       |Discrete  |Alcohol      |Litres                               |Continuous|
-|Hepatitis B  |Percentage                           |Continuous  |HIV/AIDS     |Percentage                           |Continuous|
-|Measles      |Count Data                           |Discrete  |BMI          |Average BMI                          |Continuous|
-|Polio        |Percentage                           |Continuous  |Thinness 1-19 years|Percentage                     |Continuous|
-|Diphtheria   |Percentage                           |Continuous  |Thinness 5-9 years|Percentage                      |Continuous|
+|**Life Expectancy** |Years Old (Age)                   |Continuous  |**|Total expenditure**|Percentage                       |Continuous|
+|**Country**      |Nominal Data                         |Discrete  |**|Percentage expenditure**|Percentage                  |Continuous|
+|**Year**         |Ordinal Data                         |Discrete  |**|GDP**          |Currency (USD)                       |Continuous|
+|**Status**       |Nominal Data                         |Discrete  |**|Population**   |Count                                |Discrete|
+|**Adult Mortality**|Count Data                         |Discrete  |**|Income composition of resources**|Percentage         |Continuous|
+|**Infant deaths**|Count Data                           |Discrete  |**|Schooling**    |Mean (Years)                         |Continuous|
+|**Under-five deaths**|Count Data                       |Discrete  |**|Alcohol**      |Litres                               |Continuous|
+|**Hepatitis B**  |Percentage                           |Continuous  |**|HIV/AIDS**     |Percentage                           |Continuous|
+|**Measles**      |Count Data                           |Discrete  |**|BMI**          |Average BMI                          |Continuous|
+|**Polio**        |Percentage                           |Continuous  |**|Thinness 1-19 years**|Percentage                     |Continuous|
+|**Diphtheria**   |Percentage                           |Continuous  |**|Thinness 5-9 years**|Percentage                      |Continuous|
 
 \begin{center}
 Table 1 : List of Predictor Variables
@@ -260,7 +260,7 @@ The resulting dataset are then studied closely to understand their correlation e
 
 #install.packages(GGally)
 library(GGally)
-ggcorr(df,palette = "RdBu", size=2,label=TRUE,label_size = 2,hjust = .95,layout.exp=2)+labs(title = "Correlation Matrix Plot")+ theme(plot.title = element_text(size=20))
+ggcorr(df,palette = "RdBu", size=2,label=TRUE,label_size = 2,hjust = .95,layout.exp=2)+labs(title = "Correlation Matrix Plot")+ theme(plot.title = element_text(size=12))
 
 ```
 
@@ -275,10 +275,10 @@ Life expectancy is a continuous variable and the first choice is building a line
 
 
 
-|Models           |No. of Variables |AIC Score    |Adj R-squared Score|
+|**Models**           |**No. of Variables** |**AIC Score**    |**Adj R-squared Score**|
 |-----            |-----            |-----        |-----|       
-|Original Model   |20               |7642.14      |0.8299|
-|Reduced Model    |12               |7604.24      |0.8296|
+|**Original Model**   |20               |7642.14      |0.8299|
+|**Reduced Model**    |12               |7604.24      |0.8296|
 
 \begin{center}
 Table 3 :Original vs Reduced Models
@@ -357,8 +357,11 @@ The QQ plot suggests that the model is heavy tailed and the data on both ends of
 
 
 ```{r,echo=TRUE,results='markup',fig.align = 'center' }
-densityPlot(~ Life.expectancy, show.bw=TRUE, method="kernel", data = df, xlab="age")
+densityPlot(~ Life.expectancy, show.bw=TRUE, method="kernel", data = df, xlab="age", ylab="Life.expectancy")
 title(main="Density Plot",font.main= 1)
+
+qqnorm(df$Life.expectancy)
+qqline(df$Life.expectancy, col = "red", lwd = 2)
 ```
 From the Density plot above, it can be seen that the mean of the distribution isn't symmetrical and the mean isn't centered at 0, indicating the response variable life expectancy is not normally distributed. From the Normal QQ plot of the regression model, it can be observed that there is a distinct curve in the middle of plot rather than a straight line, this indicates that there could be a bimodal distribution to response variable. These observations necessitate validation of distribution of the response variable. One of the assumptions of linear model is that the response variable is normally distributed and if it is proven that the variable is not normally distributed, linear regression model for this dataset will be  invalid due to violation of assumptions.
 
@@ -476,7 +479,7 @@ summary(lmmodtr)
 
 ```
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE, cache=TRUE}
 #LASSO
 library(glmnet)
 y <- traino$Life.expectancy
@@ -599,6 +602,13 @@ In order to arrive at a more parsimonious model, significance of the variables u
 
 #### Diagnostics
 
+```{r ,fig.align = 'center'}
+res <- resid(model_np)
+plot(fitted(model_np), res, xlab="Fitted values(Life.expectancy)", ylab="Residual")
+title(main="Residual vs Fitted plot",font.main= 1)
+abline(0,0, col="red")
+```
+Residual plot vs fitted plots will help us in assess the goodness of fit for regression model. By examining the residual plot, we can check if our model is appropriate for the data and if any assumptions have been violated(such as observation having equal variance or normal distribution). A well-fitted model will typically show no pattern or structure in the residual plot, indicating that the error are randomly distributed around zero. Looking at the Residual plot vs fitted plots above, we could see that majority of our residual are randomly dispersed at around 0 suggesting that our nonparametric regression model is appropriate for our predictions.
 
 ## 4. Conclusion
 ### First set of models for predicting life expectancy
