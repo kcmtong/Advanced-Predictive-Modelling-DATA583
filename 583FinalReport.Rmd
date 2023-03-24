@@ -236,7 +236,7 @@ head(df)
 
 #install.packages(GGally)
 library(GGally)
-ggcorr(df,palette = "RdBu", size=2,label=TRUE,label_size = 2,hjust = .95,layout.exp=2)
+ggcorr(df,palette = "RdBu", size=2,label=TRUE,label_size = 2,hjust = .95,layout.exp=2)+labs(title = "Correlation Matrix Plot")+ theme(plot.title = element_text(size=20))
 
 ```
 
@@ -310,9 +310,12 @@ vif(lmmod2)
 
 The initial model shows that we are able to explain approximately 82% of variability of our response variable using the selected predictor variables. The next step is to look at the error diagnostics from the model.
 
-```{r,echo=TRUE,results='markup', out.width="75%"}
+```{r,echo=TRUE,results='markup',fig.align = 'center'}
 par(mfrow=c(2,2))
+
 plot(lmmod2)
+mtext("Diagnostic Plots for Linear Regression Analysis", side = 3, line = -1, outer = TRUE)
+
 ```
 
 The QQ plot suggests that the model is heavy tailed and the data on both ends of the quantiles do not fit on a straight line. This is an indication that the current linear regression based model is not fitting the data well. Based on this, we undertake some additional testing to validate if the model is adequate and valid.
@@ -321,21 +324,21 @@ The QQ plot suggests that the model is heavy tailed and the data on both ends of
 #### a. Life expectancy variable distribution
 
 
-```{r include=FALSE}
+```{r,echo=TRUE,results='markup',fig.align = 'center' }
+densityPlot(~ Life.expectancy, show.bw=TRUE, method="kernel", data = df, xlab="age")
+title(main="Density Plot",font.main= 1)
+```
+From the Density plot above, we can see that the mean the distribution isn't symmetrical and the mean isn't centered at 0, indicating the response variable life expectancy is not normally distributed. The distribution also seems to have a 2nd peak indicating our response variable have a bimodal distribution. 
 
-#Histogram & QQPlot
-par(mfrow=c(1,2)) 
-# hist_bin_width = 4
-h <- hist(df$Life.expectancy, col='steelblue', main='Life.expectancy Histogram', breaks = 35)
-#not really a good "bell-shape"
-# install.packages("ggpubr")
-plot(lmmod2,which = 2)
-#S #most of the data is not fall along a straight diagonal line 
-#qqline(df$Life.expectancy)
-
+```{r,echo=TRUE,results='markup',fig.align = 'center' }
+qqnorm(df$Life.expectancy)
+qqline(df$Life.expectancy, col = "steelblue", lwd = 2)
+# plot(lmmod2,which = 2)
 #Both are indicating that our predict variable Y "df$Life.expectancy" is not normally distributed 
 ```
-From the histogram, it can be noticed that the response variable life expectancy is not normally distributed. From the plot, it also seems like a bimodal distribution of life expectancy data in the dataset.
+From the Normal QQ plot, we could see that there is distinct curve in the middle of plot rather than a having a straight line, this suggest us that there is a bimodal distributions to our response variable.
+
+
 
 #### b. Normal distribution test for our y variable 
 
@@ -565,8 +568,10 @@ We measure the significance of the variables for a parsimonious model. All the p
 
 
 Summarizing the different models and the performance assessed during the course of this project
-# Add table
 
+|        | **NPREG**            | **LASSO**         |
+|--------|-------------------|-------------------|
+| **R2** | 0.8722143         | 0.829061931452822 |
 
 ## 4. Model Improvements
 While a number of different models and statistical tests have been explored within a limited time frame of this project, we can hardly conclude we have identified the globally optimal models.  In fact, in order to limit the complication of this analysis and make it reasonably achievable, we have adopted certain model and analysis simplification in a few aspects.  These assumptions/simplification may, however, potentially have adverse effect on our underlying models accuracy.  As rooms of further improvement works based on this report, the following aspects are suggested for future exploration, studies and implementation to see if an even better-performing model can be attained.   
