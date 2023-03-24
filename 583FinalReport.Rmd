@@ -17,13 +17,15 @@ knitr::opts_chunk$set(echo = TRUE)
 # Data 583 Life Expectancy - Final Report (Life Expectancy Data)
 
 ## 1. Introduction and Hypotheses
-Life expectancy has always been an area of interest for humanity. The goal of this project is to study a dataset that contains information on life expectancy and identify some of the variables that significantly impact life expectancy. The dataset chosen for the study has life expectancy data of 193 countries between 2000-2015, together with different predictive factors. Broadly speaking, predicting variables are categorized into 4 major areas : Immunization, Mortality, Economical, and Social, containing a total of 21 individual  variables. Our hypothesis is that a subset of variables from this dataset would be able to explain and predict life expectancy with good accuracy (say > 80%). The dataset has a mix of variable types – continuous and discrete. Within discrete types, some variables are ordinal, and some are non-ordinal or nominal. With such a mix and complexity of data, we also hypothesize that all variables will not share a simple linear relationship with the predictor variable and modelling of life expectancy will require a more complex model. We analyze and validate several statistical models throughout the report with the primary goal of identifying an adequate model for the dataset.
+Life expectancy has always been an area of interest for humanity. The goal of this project is to study a dataset that contains information on life expectancy and identify some of the variables that significantly impact life expectancy. The dataset chosen for the study has life expectancy data of 193 countries between 2000-2015, together with different predictive factors. Broadly speaking, predicting variables are categorized into 4 major areas : Immunization, Mortality, Economical, and Social, containing a total of 21 individual  variables. Our hypothesis is that a subset of variables from this dataset would be able to explain and predict life expectancy with good accuracy (say > 80%). The dataset has a mix of variable types – continuous and discrete. Within discrete types, some variables are ordinal, and some are non-ordinal or nominal. With such a mix and complexity of data, we also hypothesize that all variables will not share a simple linear relationship with the predictor variable and modelling of life expectancy will require a more complex model. We analyze and validate several statistical models throughout the report with the primary goal of identifying an adequate model for predicting life expectancy.
 
 ## 2. Dataset overview
 
 ### Variables Summary and Categories
 Life expectancy is the response variable in this dataset.  This represents the mean life expectancy (in age) by specific country and year combination. Refer Figure-1 below for the list of predictor variables and their categories.
-The dataset also had 2563 missing values in various columns and  ……the NA values are generally imputed by the respective column mean. Percentage expenditure variable is removed from the entire assessment as the values present in this column are unclear. Another variable country is removed for the purpose of studying life expectancy globally. The resulting dataset with x rows and y columns are then studied closely to understand their correlation effects with the response variable life expectancy.
+
+The dataset also had 2563 missing values in various columns and  ……the NA values are generally imputed by the respective column mean. Percentage expenditure variable is removed from the entire assessment as the values present in this column are unclear. Another variable country is removed for the purpose of studying life expectancy globally. 
+
 #(Kenny, please add if any other deletion done in .... line and fill in on x and y)
 
 
@@ -41,6 +43,14 @@ The dataset also had 2563 missing values in various columns and  ……the NA va
 |Polio        |Percentage                           |Continuous  |Thinness 1-19 years|Percentage                     |Continuous|
 |Diphtheria   |Percentage                           |Continuous  |Thinness 5-9 years|Percentage                      |Continuous|
 
+Following table shows how the above variables are grouped based on the 4 categories.
+
+|  **Data Categories**   |    **Variables**                                                                              |
+|------------------------|----------------------------------------------------------------------------------------------|
+| **Economical Data**    | Total expenditure, Percentage expenditure, GDP, Income composition of resources              |
+| **Social Data**        | Country, Status, Population, Schooling, Alcohol, BMI, Thinness 1-19 years, Thinness 5-9 years|
+| **Mortality Data**     | Adult Mortality, Infant deaths, Under-five deaths                                            |
+| **Immunization Data**  | Hepatitis B, Measles, Polio, HIV/AIDS, BMI, Diphtheria                                       |
 
 ```{r, include=FALSE}
 ### Start of EDA section - retained in Rmd
@@ -231,6 +241,7 @@ head(df)
 
 ```
 
+The resulting dataset with x rows and y columns are then studied closely to understand their correlation effects with the response variable life expectancy. Following is a correlation matrix on all the variables in the dataset.
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE}
 
@@ -240,6 +251,7 @@ ggcorr(df,palette = "RdBu", size=2,label=TRUE,label_size = 2,hjust = .95,layout.
 
 ```
 
+It can be noted that the response variable life expectancy is highly correlated with income composition, schooling and adult mortality variables with a correlation value of $0.7$, $0.7$ and $-0.7$. Life expectancy is moderately correlated with variables BMI, Polio, Diphtheria, HIV.AIDS and thinness variables with a correlation value of $0.6$, $0.5$, $0.5$, $-0.6$, $-0.5$. Broadly, it can be noted that the two categories of the variables appear to be highly correlated with life expectancy when compared to other categories.
 
 ### Initial analysis using linear regression
 Life expectancy is a continuous variable and the first choice is building a linear regression model which is simple and interpretable. A BIC backward step model variable selection method is also applied on the full model to arrive at a parsimonious model containing only significant predictor variables. Following table Table A provides a summary of the two models.
@@ -251,11 +263,9 @@ Life expectancy is a continuous variable and the first choice is building a line
 |Original Model   |20               |7642.14      |0.8299|
 |Reduced Model    |12               |7604.24      |0.8296|
 
-The number of independent variables are now effectively reduced to 12, together with a lower AIC score of 7604.34. Meanwhile, the adjusted R-squared score is well kept at nearly the same level as in the original model.  The reduced model is able to explain more than 82% of variation in the response variable and its performance is above the anticipated 80%.
+The number of independent variables are now effectively reduced to 12, together with a lower AIC score of 7604.34. Meanwhile, the adjusted R-squared score is well kept at nearly the same level as in the original model.  The reduced model is able to explain more than 82% of variation in the response variable and its performance is above the anticipated 80%. The reduced model now contains the following 12 variables : Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling.
 
-The reduced model now contains the following 12 variables : Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling.
-
-With performance of the model over 80%, the next step is to look at the error diagnostics from the model.
+The reduced model from this step is selected as the first model for the dataset. It is used for further evaluation from a linear model stand point and will be referred to as linear model in the remainder of the discussion. 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 #### Full model summary and diagnostics
@@ -290,7 +300,6 @@ library(mclust)
 clus1 <- Mclust(df1)
 summary(clus1)
 ```
-We eliminate the Status variable from the selected list of variables in the reduced model as this is a factor variable with two statuses and not continuous. We first study the effect of the model without this variable. 
 
 ```{r, message=FALSE, warning=FALSE, include=FALSE}
 library(car)
@@ -308,7 +317,7 @@ vif(lmmod2)
 
 ### Linear model and diagnostics
 
-The initial model shows that we are able to explain approximately 82% of variability of our response variable using the selected predictor variables. The next step is to look at the error diagnostics from the model.
+The linear model shows that we are able to explain approximately 82% of variability of our response variable using the selected predictor variables. The next step is to look at the error diagnostics from the model.
 
 ```{r,echo=TRUE,results='markup',fig.align = 'center'}
 par(mfrow=c(2,2))
@@ -318,7 +327,7 @@ mtext("Diagnostic Plots for Linear Regression Analysis", side = 3, line = -1, ou
 
 ```
 
-The QQ plot suggests that the model is heavy tailed and the data on both ends of the quantiles do not fit on a straight line. This is an indication that the current linear regression based model is not fitting the data well. Based on this, we undertake some additional testing to validate if the model is adequate and valid.
+The QQ plot suggests that the model is heavy tailed and the data on both ends of the quantiles do not fit on a straight line. This is an indication that the current linear regression based model is not fitting the data well. Based on this, we undertake additional testing to validate if the model is adequate and valid.
 
 
 #### a. Life expectancy variable distribution
@@ -328,39 +337,36 @@ The QQ plot suggests that the model is heavy tailed and the data on both ends of
 densityPlot(~ Life.expectancy, show.bw=TRUE, method="kernel", data = df, xlab="age")
 title(main="Density Plot",font.main= 1)
 ```
-From the Density plot above, we can see that the mean the distribution isn't symmetrical and the mean isn't centered at 0, indicating the response variable life expectancy is not normally distributed. The distribution also seems to have a 2nd peak indicating our response variable have a bimodal distribution. 
-
-```{r,echo=TRUE,results='markup',fig.align = 'center' }
-qqnorm(df$Life.expectancy)
-qqline(df$Life.expectancy, col = "steelblue", lwd = 2)
-# plot(lmmod2,which = 2)
-#Both are indicating that our predict variable Y "df$Life.expectancy" is not normally distributed 
-```
-From the Normal QQ plot, we could see that there is distinct curve in the middle of plot rather than a having a straight line, this suggest us that there is a bimodal distributions to our response variable.
+From the Density plot above, it can be seen that the mean of the distribution isn't symmetrical and the mean isn't centered at 0, indicating the response variable life expectancy is not normally distributed. From the Normal QQ plot of the regression model, it can be observed that there is a distinct curve in the middle of plot rather than a straight line, this indicates that there could be a bimodal distribution to response variable. These observations necessitate validation of distribution of the response variable. One of the assumptions of linear model is that the response variable is normally distributed and if it is proven that the variable is not normally distributed, linear regression model for this dataset will be  invalid due to violation of assumptions.
 
 
+#### b. Normal distribution test for response variable 
 
-#### b. Normal distribution test for our y variable 
+Shapiro-Wilk test is a statistical test for normality and a p-value that is very small and is less than 0.05 proves the variable in consideration is not normally distributed. Shapiro-Wilk test on the response variable life expectancy resulted in a p-value of < 2.2e-16 as seen in the test output below.
 
-Next, we evaluate to confirm if the response variable is normally distributed using Shapiro-Wilk test. The test has a p-value that is very small and is less than 0.05, this indicates that our response variable if not normally distributed. 
-
-```{r}
+```{r echo = FALSE}
 #Shapiro-Wilk Test
 
 shapiro.test(df$Life.expectancy)
 
 #Finding: Since df$Life.expectancy p-value is less than .05, indicate that our y variable is not normally distributed!!!
 ```
-As response is not normal, the next step is to validate with a hypothesis test for validating correct specification of parametric MLR models.
+This proves the response variable is not normally distributed and additionally, hypothesis tests for validating correct specification of parametric MLR models are conducted to identify if the selected linear model specification is valid for the given dataset.
+
 
 #### c. Parametric model specification test
-Another test to see if the above parametric model specification is correct.
+
+Ramsey's RESET test is a test conducted to validate the correctness of the functional form. A p-value that is very small and is less than 0.05 rejects that the functional form is correctly specified. RESET test is conducted on the linear model and the resulting p-value as seen from the output below is $< 2.2e-16$.
+
 ```{r}
 library(lmtest)
 resettest(lmmod2)
 ```
+Based on the test, the linear model is rejected as the correct functional form for modelling the underlying data.
 
 #### d. Consistent nonparametric inference
+
+The consistent nonparametric inference test is a hypothesis test for correct specification of parametric MLR models. This allows to estimate if the functional for given parameter estimates is reasonable when compared. A p-value that is very small and is less than 0.05 rejects that the functional form for given parameter estimates is reasonable.
 
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 #LM with matching dependent variable with npreg
@@ -385,22 +391,17 @@ result_npcms <- readRDS("result_npcms.rds") #PreTrained Model
 summary(result_npcms)
 ```
 
+As noted from above table, the p-value for linear model is $< 2.22e-16$ and this output suggests that the linear model is rejected.
 
-
-All the diagnostic tests indicate that linear regression is not an appropriate model for the given data as assumptions for the model are violated.
+All the diagnostic tests indicate that linear regression is not an appropriate model for the given data. This proves one of the hypothesis of our project that a simple linear model may not be adequate in explaining the variability in the response variable life expectancy.
 
 
 ### Parametric regression models and relative assessments
 
-As the linear model is not adequate, we move on to model this with other models that do not assume normal distribution. The models selected for the given dataset are LASSO and Neural Net with  linear activation function. The following variables are selected for rest of the modeling based on correlation of the variables with the response variable and our knowledge on the domain. Here is a summary of the variable selection and our comments.
+As the linear model is not adequate, we move on to other parametric regression models that do not assume normal distribution and known to perform well on complex and mixed data types. There are several models that could be used in the assessments and we selected LASSO and Neural Net with  linear activation function for the given dataset. 
 
+The following variables are selected for rest of the modeling based on correlation of the variables with the response variable and our knowledge on the domain. Here is a summary of the variable selection and  comments describing the reason for removal of the variable.
 
-|  **Data Categories**   |    **Vaiables**                                                                              |
-|------------------------|----------------------------------------------------------------------------------------------|
-| **Economical Data**    | Total expenditure, Percentage expenditure, GDP, Income composition of resources              |
-| **Social Data**        | Country, Status, Population, Schooling, Alcohol, BMI, Thinness 1-19 years, Thinness 5-9 years|
-| **Mortality Data**     | Adult Mortality, Infant deaths, Under-five deaths                                            |
-| **Immunization Data**  | Hepatitis B, Measles, Polio, HIV/AIDS, BMI, Diphtheria                                       |
 
 | **Column Name **       | **Type **         | **LM ** | **LASSO **   | **NN ** | **NPREG **    | **Reason of Removal**                                                       |
 |------------------------|-------------------|---------|--------------|--------|--------------|-----------------------------------------------------------------------------|
@@ -428,9 +429,7 @@ As the linear model is not adequate, we move on to model this with other models 
 | status.val                       | (Continuous) |        |           |        |           | based on domain knowledge, not consider important                           |
 
 
-Two different supervised algorithms tried on the dataset. They do not have the constraint of a normal distribution for response variable.
-
-First did a train and test split so we can measure the MSE and compare how each of the models are performing in terms of minimizing MSE.
+First, the dataset is divided into a train and test datasets with an approximate 70%-30% of the complete data using a random sampling process so long run performance of the models can be estimated. The train dataset has 2000 records and test dataset has 778 records in total.
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 library(glmnet)
@@ -504,11 +503,13 @@ for(i in 1:62){
 }
 ```
 
-PRESS comparison for the three models
+Three types of models using linear regression (LM), LASSO and NeuralNet with linear activation function are built on the $train$ dataset and the PRESS (Predicted Residual Error Sum of Squares) statistic is calculated using $test$ to identify the best performing model. Following table summarizes and compares the PRESS statistics.
 
 |           | **LM**   | **LASSO** | **NN**   |
 |-----------|----------|-----------|----------|
 | **PRESS** | 15.93367 | 15.98972  | 22.43056 |
+
+Based on the output, it can be seen that LM and LASSO models perform better than NeuralNet model for this dataset. P.S: Linear model is used in these assessments for benchmarking purposes and not for actual use as the model is not valid.
 
 ```{r include=FALSE}
 # #MSE comparison
@@ -517,7 +518,8 @@ PRESS comparison for the three models
 # print(min(mse_nnet_lin))
 
 ```
-Test R2 comparison for the three models
+
+Selecting LM and LASSO, the $R^2$ is also measured for the models. It can be seen that LASSO performs nearly at the same level as the linear model (LM).
 
 |        | **LM**            | **LASSO**         |
 |--------|-------------------|-------------------|
@@ -535,17 +537,15 @@ Test R2 comparison for the three models
 ```
 
 
-As we compare linear model, lasso and neural net, we see that the test MSE is minimum for LASSO model. So this is a model that can be considered for the dataset.
+Based on these assessments, LASSO is a viable model that can be considered for this dataset that has approximately $82%$ for predicted R^2 value and meets the performance goals expectations.
 
 #### Diagnostics
 
 ### Nonparametric regression
 
-The response variable shows a bimodal distribution and nonparametric regression performs better on such datasets per literature. We next try non parametric regression on the dataset.
+Nonparametric regression is considered as another good option for the complex and mixed dataset that is of interest here due to proven flexibility and adaptability nature of these models. One important difference between nonparametric model and rest of the parametric models is that the entire data is used in the model training process. The nonparametric regression is carried out with local linear estimator and cv.aic for automated bandwidth selection. This bandwidth selection method specifies expected Kullback-Leibler cross-validation (Hurvich, Simonoff, and Tsai (1998))and in general provides consistent estimates. 
 
-#### Diagnostics
-
-```{r cache=TRUE}
+```{r cache=TRUE, include=FALSE}
 library(np)
 # n <- names(df)
 # f <- as.formula(paste("df$Life.expectancy ~", paste(n[!n %in% "Life.expectancy"], collapse = " + ")))
@@ -557,23 +557,32 @@ library(np)
 model_np <- readRDS("model_np.rds") #PreTrained Model
 summary(model_np)
 ```
-We see that the R^2 is increased to 87% approximately. Done with local linear estimator and cv.aic. This is a cross validated model and help estimate the long run performance. Can we see BIC? 
+The output of the nonparametric regression model indicates an $R^2$ value of 87% approximately. This is the summary measure of in-sample fit for the model lies in the range of [0,1]. 1 denotes a perfect fit to the sample data and 0 indicates no fit. This is the counterpart to $R^2$ of linear model.
+
+We acknowledget that the $R^2$ for LASSO model is calculated based on a train vs test setup and nonparametric regression $R^2$ is calculated on the complete dataset and a nonparamertic train-test fitting is identified as a future scope item that will be looked into. As the nonparametric model is a cross validated model and can provide long run performance, the LASSO and nonparametric model coeffients are compared and summarized in the table below.
+
+|        | **NPREG**            | **LASSO**         |
+|--------|-------------------|-------------------|
+| **R2** | 0.8722143         | 0.829061931452822 |
+
+The nonparametric model has a higher $R^2$ of 87%(approx) when compared to the parametric model $R^2$ of 83%(approx). So, it is concluded that nonparametric model fits the given dataset better and is selected among the assessed models for use.
+
+In order to arrive at a more parsimonious model, significance of the variables used in nonparametric regression is measured and per below output all the variables are significant and will be retained in the model. 
 
 ```{r cache=TRUE}
 #npsigtest_npreg <- npsigtest(model_np)    #10 HRs to run...
 ```
 ![npsigtest_npreg result](dataset/npsigtest_npreg.png)
 
-We measure the significance of the variables for a parsimonious model. All the parameters used are significant.
+#### Diagnostics
 
 
-Summarizing the different models and the performance assessed during the course of this project
+## 4. Conclusion
+The non-normality nature of the dataset has been observed and verified by rigorous testings and validation in this report.  This characteristic has greatly limited the applicablity of many popular common models which rely on the assumption of normal distribution.  After further model assessment, we are finally able to come into the best available conclusion that NOREG and LASSO are the two best-performing models based on model performance indicators like MSE and R-squared values.  
 
-|        | **NPREG**            | **LASSO**         |
-|--------|-------------------|-------------------|
-| **R2** | 0.8722143         | 0.829061931452822 |
+We find that life expectancy is....[KT : I literally have no idea what to put there....may be I leave it to Viji to continue and finally conclude the report :) ]
 
-## 4. Model Improvements
+### Future improvements
 While a number of different models and statistical tests have been explored within a limited time frame of this project, we can hardly conclude we have identified the globally optimal models.  In fact, in order to limit the complication of this analysis and make it reasonably achievable, we have adopted certain model and analysis simplification in a few aspects.  These assumptions/simplification may, however, potentially have adverse effect on our underlying models accuracy.  As rooms of further improvement works based on this report, the following aspects are suggested for future exploration, studies and implementation to see if an even better-performing model can be attained.   
 
 1. Currently, no particular handling has been done to process the categorical, ordinal, and nominal variables.  Current variables are simply fit into different models with "as-is" data basis.  Further exploration on whether some techniques (such as Variables Encoding/transformation, factorization factor()) can be deployed to achieve models improvement is preferable.
@@ -585,7 +594,7 @@ While a number of different models and statistical tests have been explored with
 4. Currently in our analysis, data implantation (rather than removing the records with NA values) has been deployed in order to retain as many records as possible and simplify/streamline the subsequent analysis.  Although data implantation is a common industry practice, We are not 100% sure if such procedure would affect the model accuracy.  In this regard, we may investigate and compare different null data handling techniques (apart from data implantation using mean) and investigate if we can achieve our modelling improvement as a result.
 
 
-## 5. Challenges
+### Interesting challenges
 During this project, a number of challenges are encountered.  These challenges have created extra hurdles and unforeseeable overheads on our projects, or have caused unexpected complication for the project team in order to efficiently and confidently identify the most suitable models.    
 
 1. Running npreg on our model is extremely time-consuming.  It took 30 hours in a notebook computer.  This undesirable situation has seriously constrained our flexibility in fine-tuning and re-running the model with different model settings such as variable combination because we simply cannot afford adjusting the model fitting to look more a potentially more optimal model fitting.
@@ -595,13 +604,6 @@ During this project, a number of challenges are encountered.  These challenges h
 3. As mentioned in the earlier analysis, bimodal distribution is identified in the dataset, which has violated the basic assumptions of many parametric models.  This behavior has therefore severely limited the applicability of many parametric modelling.  We also lack of sufficient knowledge on how to optimally model and analyze bimodal distribution.
 
 4. The dataset has demonstrated quite a high proportion of NA values.  Several columns contain significantly more than 5% of NA values.  If we decide to adopt the 5% threshold and remove all records (e.g. dropping columns or removing rows) with NA values which exceeds the 5% threshold, it would result in a significant amount of records being removed and only remain a much smaller sample size available for further analysis.  This may tremendously and adversely impact and deteriorate the analysis accuracy and reliability. 
-
-## 6. Conclusion
-The non-normality nature of the dataset has been observed and verified by rigorous testings and validation in this report.  This characteristic has greatly limited the applicablity of many popular common models which rely on the assumption of normal distribution.  After further model assessment, we are finally able to come into the best available conclusion that NOREG and LASSO are the two best-performing models based on model performance indicators like MSE and R-squared values.  
-
-We find that life expectancy is....[KT : I literally have no idea what to put there....may be I leave it to Viji to continue and finally conclude the report :) ]
-
-
 
 
 ## Appendix
