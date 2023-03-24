@@ -254,7 +254,7 @@ head(df)
 
 ```
 
-The resulting dataset with x rows and y columns are then studied closely to understand their correlation effects with the response variable life expectancy. Following is a correlation matrix on all the variables in the dataset.
+The resulting dataset are then studied closely to understand their correlation effects with the response variable life expectancy. Following is a correlation matrix on all the variables in the dataset.
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE}
 
