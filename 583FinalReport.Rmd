@@ -195,7 +195,7 @@ for(i in 1:ncol(le_dropped)) {                                   # Replace NA in
 ```
 
 
-```{r, eval=FALSE, fig.height=2, fig.width=2, message=FALSE, warning=FALSE, include=FALSE}
+```{r, fig.height=2, fig.width=2, message=FALSE, warning=FALSE, include=FALSE}
 library(ggplot2)
 #install.packages("tidyverse")
 library(tidyverse)
@@ -218,7 +218,7 @@ le_dropped %>%
 ```
 
 
-```{r, eval=FALSE, fig.height=2, message=FALSE, warning=FALSE, include=FALSE}
+```{r, fig.height=2, message=FALSE, warning=FALSE, include=FALSE}
 le_dropped.pivot <- pivot_longer(le_dropped,c(Adult.Mortality,under.five.deaths,infant.deaths),names_to='Mortality.Group',values_to='Mortality.Rate')
 require(gridExtra)
 
@@ -242,7 +242,7 @@ grid.arrange(le_dropped.pivot.area,le_dropped.pivot.line, ncol=2)
 ```
 
 
-```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 head(le_dropped)
 ```
 
@@ -310,12 +310,12 @@ df1<-df[,c('Life.expectancy','Adult.Mortality','infant.deaths','under.five.death
 
 
 
-```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 #not carrying forward any clustering analysis for the first release of the report due to time
 #constraints
-library(mclust)
-clus1 <- Mclust(df1)
-summary(clus1)
+#library(mclust)
+#clus1 <- Mclust(df1)
+#summary(clus1)
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
@@ -365,7 +365,7 @@ From the **Density plot** above, it can be seen that the mean of the distributio
 
 Shapiro-Wilk test is a statistical test for normality and a p-value that is very small and is less than 0.05 proves the variable in consideration is not normally distributed. Shapiro-Wilk test on the response variable life expectancy resulted in a p-value of < 2.2e-16.
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, echo=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
 #Shapiro-Wilk Test
 
 shapiro.test(df$Life.expectancy)
@@ -379,7 +379,7 @@ This proves the response variable is not normally distributed and additionally, 
 
 Ramsey's RESET test is a test conducted to validate the correctness of the functional form. A p-value that is very small and is less than $0.05$ rejects that the functional form is correctly specified. RESET test is conducted on the linear model and the resulting p-value is $< 2.2e-16$.
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, echo=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
 library(lmtest)
 resettest(lmmod2)
 ```
@@ -389,19 +389,19 @@ Based on the test, the linear model is rejected as the correct functional form f
 
 The consistent nonparametric inference test is a hypothesis test for correct specification of parametric MLR models. This allows to estimate if the functional for given parameter estimates is reasonable when compared. A p-value that is very small and is less than $0.05$ rejects that the functional form for given parameter estimates is reasonable.
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
 #LM with matching dependent variable with npreg
 model_lm <- lm(Life.expectancy~Adult.Mortality + infant.deaths + Hepatitis.B + BMI + under.five.deaths + Polio + Diphtheria + HIV.AIDS + GDP + thinness..1.19.years + Income.composition.of.resources + Schooling, data = df, x=TRUE, y=TRUE)
 summary(model_lm)
 ```
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 # X <- data.frame(df$Adult.Mortality,df$infant.deaths,df$Hepatitis.B,df$BMI,df$under.five.deaths,df$Polio,df$Diphtheria,df$HIV.AIDS,df$GDP,df$thinness..1.19.years,df$Income.composition.of.resources,df$Schooling)
 # 
 # result_npcms <- npcmstest(model=model_lm, xdat=X, ydat=df$Life.expectancy) #33Hours to run
 ```
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, echo=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 # result_npcms
 
 # objects()
@@ -412,7 +412,7 @@ result_npcms <- readRDS("result_npcms.rds") #PreTrained Model
 summary(result_npcms)
 ```
 
-As noted from above table, the p-value for linear model is $< 2.22e-16$ and this output suggests that the linear model is rejected.
+As noted, the p-value for linear model is $< 2.22e-16$ and this output suggests that the linear model is rejected.
 
 All the diagnostic tests indicate that linear regression is not an appropriate model for the given data. This proves one of the hypothesis of our project that a simple linear model may not be adequate in explaining the variability in the response variable life expectancy.
 
@@ -629,7 +629,9 @@ Both these goals have been successfully evaluated during the course of the proje
 
 The nonparametric model has a higher $R^2$ of 87%(approx) when compared to the parametric model $R^2$ of 83%(approx). So, it is concluded that nonparametric model fits the given dataset better and is selected as the best one among all assessed models for use of predicting life expectancy.
 
-In order to arrive at a more parsimonious model, significance of the variables used in nonparametric regression is measured and all the 12 variables are significant and recommended to be retained in the model. The variables selected in predicting life expectancy by the recommended models are: 'Adult.Mortality','infant.deaths','under.five.deaths','Hepatitis.B','BMI','Polio','Diphtheria', 'HIV.AIDS','thinness..1.19.years','Income.composition.of.resources','Schooling','GDP'.
+In order to arrive at a more parsimonious model, significance of the variables used in nonparametric regression is measured and all the 12 variables are significant and recommended to be retained in the model. The variables selected in predicting life expectancy by the recommended models are: 'Adult.Mortality','infant.deaths','under.five.deaths','Hepatitis.B',
+'BMI','Polio','Diphtheria','HIV.AIDS','thinness..1.19.years',
+'Income.composition.of.resources','Schooling','GDP'.
 
 ### 4.2 Future improvements
 
@@ -661,7 +663,7 @@ Every project deals with an interesting amount of challenges and there are some 
 
 As Multicollinearity can potentially affect the accuracy of regression model, a correlation study is undertaken to understand and assess the situation.  It is found that infant deaths and under.five.deaths are nearly 100% correlated. From the variable inflation factors (VIF) calculations as well, it is evident that the two variables have a high inflation factor of 166.764248 and 166.967503 respectively. Variable under.five.deaths need to be removed from the dataset and the models need to be assessed for their performance. LASSO model can handle multicollinearity automatically so there is no change in performance expected for the model.
 
-```{r, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 library(car)
 vif(model.step.bic)
 
