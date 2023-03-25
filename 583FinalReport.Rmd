@@ -362,7 +362,7 @@ qqline(df$Life.expectancy, col = "red", lwd = 2)
 
 ```
 \newpage
-From the **Density plot** above, it can be seen that the mean of the distribution isn't symmetrical and the mean isn't centered at 0, indicating the response variable life expectancy is not normally distributed. From the **Normal QQ plot** of the regression model, it can be observed that there is a distinct curve in the middle of plot rather than a straight line, this indicates that there could be a bimodal distribution to response variable. These observations necessitate validation of distribution of the response variable.
+From the **Life expectancy distribution density plot**, it can be seen that the mean of the distribution isn't symmetrical and the mean isn't centered at 0, indicating the response variable life expectancy is not normally distributed. From the **Normal QQ plot** of the regression model, it can be observed that there is a distinct curve in the middle of plot rather than a straight line, this indicates that there could be a bimodal distribution to response variable. These observations necessitate validation of distribution of the response variable.
 
 
 #### b. Normal distribution test for response variable 
