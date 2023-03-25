@@ -32,21 +32,21 @@ Life expectancy is the response variable in this dataset.  This represents the m
 The dataset contains 2563 missing values in various columns.  To handle the NA values in the dataset, two simple strategies are used.  Firstly, 12 countries that have more NA values within their records are removed from the dataset.  Secondly, the remaining NA records are imputed by the respective column mean.
 
 Two columns are removed from the original dataset. The 'Percentage expenditure' variable is removed from the entire assessment as the values present in this column are unclear. Another variable 'country' is also removed because we intend to focus on studying the life expectancy on a global basis.
-
+\newpage
 
 |**Variable**     |**Unit of Measurement/Data Category**    | **Continuous vs Discrete** |   **Variable**     |**Unit of Measurement/Data Category**    | **Continuous vs Discrete** |
 |-----        |-----                                | ----- |   -----        |-----                                | ----- |
-|**Life Expectancy** |Years Old (Age)                   |Continuous  |**|Total expenditure**|Percentage                       |Continuous|
-|**Country**      |Nominal Data                         |Discrete  |**|Percentage expenditure**|Percentage                  |Continuous|
-|**Year**         |Ordinal Data                         |Discrete  |**|GDP**          |Currency (USD)                       |Continuous|
-|**Status**       |Nominal Data                         |Discrete  |**|Population**   |Count                                |Discrete|
-|**Adult Mortality**|Count Data                         |Discrete  |**|Income composition of resources**|Percentage         |Continuous|
-|**Infant deaths**|Count Data                           |Discrete  |**|Schooling**    |Mean (Years)                         |Continuous|
-|**Under-five deaths**|Count Data                       |Discrete  |**|Alcohol**      |Litres                               |Continuous|
-|**Hepatitis B**  |Percentage                           |Continuous  |**|HIV/AIDS**     |Percentage                           |Continuous|
-|**Measles**      |Count Data                           |Discrete  |**|BMI**          |Average BMI                          |Continuous|
-|**Polio**        |Percentage                           |Continuous  |**|Thinness 1-19 years**|Percentage                     |Continuous|
-|**Diphtheria**   |Percentage                           |Continuous  |**|Thinness 5-9 years**|Percentage                      |Continuous|
+|**Life Expectancy** |Years Old (Age)                   |Continuous  |**Total expenditure**|Percentage                       |Continuous|
+|**Country**      |Nominal Data                         |Discrete  |**Percentage expenditure**|Percentage                  |Continuous|
+|**Year**         |Ordinal Data                         |Discrete  |**GDP**          |Currency (USD)                       |Continuous|
+|**Status**       |Nominal Data                         |Discrete  |**Population**   |Count                                |Discrete|
+|**Adult Mortality**|Count Data                         |Discrete  |**Income composition of resources**|Percentage         |Continuous|
+|**Infant deaths**|Count Data                           |Discrete  |**Schooling**    |Mean (Years)                         |Continuous|
+|**Under-five deaths**|Count Data                       |Discrete  |**Alcohol**      |Litres                               |Continuous|
+|**Hepatitis B**  |Percentage                           |Continuous  |**HIV/AIDS**     |Percentage                           |Continuous|
+|**Measles**      |Count Data                           |Discrete  |**BMI**          |Average BMI                          |Continuous|
+|**Polio**        |Percentage                           |Continuous  |**Thinness 1-19 years**|Percentage                     |Continuous|
+|**Diphtheria**   |Percentage                           |Continuous  |**Thinness 5-9 years**|Percentage                      |Continuous|
 
 \begin{center}
 Table 1 : List of Predictor Variables
@@ -347,17 +347,21 @@ mtext("Diagnostic Plots for Linear Regression Analysis", side = 3, line = -1, ou
 From the above diagnostic plots, the **Residual vs Fitted** and **Scale-Location** plots show a horizontal red line which indicate that the variance of the residual is same for different values of predictor variables. The **Residuals vs Leverage** plot shows some points with high residues and as the points are within cook's distance of 0.5, no records need to be eliminated. The **Normal Q-Q plot** suggests that the model is heavy tailed and the data on both ends of the quantiles do not fit on a straight line. This is an indication that the current linear regression based model is not fitting the data well and that the response variable is not normally distributed. Based on this, we undertake additional testing to validate if the model is adequate and valid.
 
 
+
+\newpage
 #### a. Life expectancy variable distribution
 
 
-```{r,echo=FALSE,results='markup',fig.align = 'center' }
-densityPlot(~ Life.expectancy, show.bw=TRUE, method="kernel", data = df, xlab="age", ylab="Life.expectancy")
-title(main="Density Plot",font.main= 1)
+```{r,echo=FALSE,results='markup',fig.align = 'center', fig.width = 8, fig.asp = .62}
+plot_den1<-densityPlot(~ Life.expectancy, show.bw=TRUE, method="kernel", data = df, xlab="age", ylab="Life.expectancy")
+title(main="Life expectancy distribution density plot",font.main= 1)
+polygon(plot_den1, col = rgb(0.78, 0.89, 1, alpha = 0.6))
 
 qqnorm(df$Life.expectancy)
 qqline(df$Life.expectancy, col = "red", lwd = 2)
 
 ```
+\newpage
 From the **Density plot** above, it can be seen that the mean of the distribution isn't symmetrical and the mean isn't centered at 0, indicating the response variable life expectancy is not normally distributed. From the **Normal QQ plot** of the regression model, it can be observed that there is a distinct curve in the middle of plot rather than a straight line, this indicates that there could be a bimodal distribution to response variable. These observations necessitate validation of distribution of the response variable.
 
 
@@ -608,16 +612,22 @@ In order to arrive at a more parsimonious model, significance of the variables u
 ```
 ![Nonparametric model variable significance](dataset/npsigtest_npreg.png)
 
-
+\newpage
 #### a. Error Diagnostics
-
-```{r ,echo=FALSE, fig.align = 'center'}
+```{r ,fig.align = 'center', echo=FALSE}
 res <- resid(model_np)
 plot(fitted(model_np), res, xlab="Fitted values(Life.expectancy)", ylab="Residual")
 title(main="Residual vs Fitted plot",font.main= 1)
 abline(0,0, col="red")
 ```
-**Residual vs Fitted plot** help in assessessment of the goodness of fit for the nonparametric regression model. A well-fitted model typically show no pattern or structure in the residual plot, indicating that the error are randomly distributed around zero. Looking at the Residual plot vs fitted plots above, the majority of residual are randomly dispersed at around 0 suggesting that nonparametric regression model is acceptable and recommended for use.
+**Residual vs Fitted plot** help in assessment of the goodness of fit for the nonparametric regression model. A well-fitted model typically show no pattern or structure in the residual plot, indicating that the error are randomly distributed around zero. Looking at the Residual plot vs fitted plots above, the majority of residual are randomly dispersed at around 0 suggesting that nonparametric regression model is acceptable and recommended for use.
+```{r ,fig.align = 'center', echo=FALSE, fig.width = 8, fig.asp = .62}
+plot_den<-densityPlot(~ res, show.bw=TRUE, method="kernel",xlab="Residual")
+title(main="Residual Density Plot",font.main= 1)
+abline(v = 0, col="red")
+polygon(plot_den, col = rgb(0.78, 0.89, 1, alpha = 0.6))
+```
+**Residual Density Plot** is another method of evaluating models model fits, if the residuals follow a normal distribution, it is suggestion that the model is a good fit for the data. If the residuals deviate from a normal distribution, it is suggesting that the model may not be a good fit for our data and further analysis maybe needed. From our Residual Density Plot above, the distribution of our residual seems to form a bell-shape curve and centered at zero(indicated by the red line), suggesting that our residual is normally distributed and nonparametric regression model are a good fit for our data.
 
 ## 4. Conclusion
 
